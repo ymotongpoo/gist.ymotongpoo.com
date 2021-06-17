@@ -1,0 +1,17 @@
+baseURL = "http://gist.ymotongpoo.dev"
+languageCode = "ja"
+title = "gist::ymotongpoo"
+theme = "hugo-primer"
+hasCJKLanguage = true
+summaryLength = 70
+pygmentsCodeFences = true
+pygmentsUseClasses = true
+copyright = "&copy;Yoshi Yamaguchi 2021-"
+
+[params]
+description = "A brain dumps by Yoshi Yamaguchi."
+twitter = "ymotongpoo"
+useIcon = true
+useTwitterCard = true
+shareTo = ["Twitter", "Hatena", "Facebook"]
+showFooterCredits = true
