@@ -2,7 +2,7 @@
 title: "Spring Bootを試した"
 date: 2021-06-18T11:02:34+09:00
 draft: false
-tags: ["spring-boot", "spring", "java"]
+tags: ["spring-boot", "spring", "java", "docker"]
 ---
 
 ## SpringとSpring Boot
@@ -32,3 +32,25 @@ IntelliJ UltimateだったらテンプレートでSpring Bootの設定ができ�
 * https://spring.pleiades.io/quickstart
 
 ここを読んだらGETを受け付けるREST APIのHello Worldはすぐにできた。
+
+```console
+./mvnw spring-boot:run
+```
+
+## コンテナイメージの作成
+
+とりあえず何も考えずにDockerをつかてビルドしたんだけど、ベースイメージの選択ではまった。
+
+```dockerfile
+FROM maven:3.8-openjdk-11 as builder
+WORKDIR /build
+COPY . .
+RUN mvn install
+
+FROM gcr.io/distroless/java-debian10
+COPY --from=builder /build/target/demo-0.1.0.jar /jar/demo-0.1.0.jar
+EXPOSE 8080
+CMD ["/jar/demo-0.1.0.jar"]
+```
+
+Distrolessの場合は `java -jar` が指定された状態なので `CMD` に渡すのはJARファイルのパス
