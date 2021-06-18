@@ -24,7 +24,7 @@ serviceAccount: "projects/${PROJECT_ID}/serviceAccounts/xxxxxxx@xxxx.iam.gservic
 
 ところが、これでいいと思ったらGitHubのpushをトリガーにしたビルドだと次のようなエラーになって動かない。
 
-{{< figure src="/image/20210617-1.png" >}}
+{{< figure src="/image/202106/20210617-1.png" >}}
 
 * [Configuring user-specified service accounts | Limitations](https://cloud.google.com/build/docs/securing-builds/configure-user-specified-service-accounts#limitations)
 
