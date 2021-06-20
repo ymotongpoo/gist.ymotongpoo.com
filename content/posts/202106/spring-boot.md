@@ -2,7 +2,7 @@
 title: "Spring Bootを試した"
 date: 2021-06-18T11:02:34+09:00
 draft: false
-tags: ["spring-boot", "spring", "java", "docker"]
+tags: ["spring-boot", "spring", "java", "docker", "programming"]
 ---
 
 ## SpringとSpring Boot

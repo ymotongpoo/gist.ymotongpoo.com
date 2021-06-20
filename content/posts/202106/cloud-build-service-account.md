@@ -2,7 +2,7 @@
 title: "Cloud Buildで独自のService Accountを使う"
 date: 2021-06-17T14:58:07+09:00
 draft: false
-tags: ["google-cloud", "cloud-build", "iam", "ci"]
+tags: ["google-cloud", "cloud-build", "iam", "cicd"]
 ---
 
 ## `serviceAccount` セクション

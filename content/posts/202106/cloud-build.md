@@ -2,7 +2,7 @@
 title: "Cloud Buildの設定で手間取ったところ"
 date: 2021-06-19T23:01:33+09:00
 draft: false
-tags: ["cloud-build", "secret-manager", "docker"]
+tags: ["cloud-build", "secret-manager", "docker", "cicd", "devops"]
 ---
 
 ## Secret Managerで取得した値をDockerプロセスに渡せない
