@@ -1,6 +1,7 @@
 <!doctype html><html><head><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>docker &ndash; gist::ymotongpoo</title><meta name=description property="og:description" content="A brain dumps by Yoshi Yamaguchi."><meta name=apple-mobile-web-app-title content="gist::ymotongpoo"><link rel=icon href=http://gist.ymotongpoo.devfavicon-64.png><link rel=apple-touch-icon href=http://gist.ymotongpoo.devapple-touch-icon.png><link rel=mask-icon size=any href=http://gist.ymotongpoo.devpinned-icon.svg><meta name=twitter:card content="summary"><meta name=twitter:site content="@ymotongpoo"><meta name=twitter:creator content="@ymotongpoo"><meta name=twitter:title content="docker | gist::ymotongpoo"><meta name=twitter:description content="|A brain dumps by Yoshi Yamaguchi."><meta name=twitter:image content="http://gist.ymotongpoo.devtwitter-card.png"><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css><link rel=stylesheet href=/assets/custom_style.css></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Info</span></a>
 <a class=UnderlineNav-item href=/posts/><span>Posts</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div><h1>docker</h1><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/docker-systemd/><div class="h2 mt-1 mb-1">DockerでSystemdが起動しない</div></a></div><div class=Subhead-description><a href=/tags/docker class=muted-link><span class="Label Label--gray">docker</span></a>
 <a href=/tags/systemd class=muted-link><span class="Label Label--gray">systemd</span></a>
+<a href=/tags/compute-engine class=muted-link><span class="Label Label--gray">compute-engine</span></a>
 <a href=/tags/devops class=muted-link><span class="Label Label--gray">devops</span></a><div class=float-md-right><span>2021-06-20</span></div></div></div><div class=text-gray>失敗する Docker内でSystemdを起動しようとすると失敗する。 root@3e903545869d:/app# systemctl start pyspabot System has not been booted with systemd as init system (PID 1). Can't operate. Failed to connect to bus: Host is down 検索すると同様の事象
 <a class=muted-link href=/posts/202106/docker-systemd/>…</a></div></div><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/cloud-build/><div class="h2 mt-1 mb-1">Cloud Buildの設定で手間取ったところ</div></a></div><div class=Subhead-description><a href=/tags/cloud-build class=muted-link><span class="Label Label--gray">cloud-build</span></a>
 <a href=/tags/secret-manager class=muted-link><span class="Label Label--gray">secret-manager</span></a>
@@ -18,32 +19,38 @@
 <span class="text-right Counter">3</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/cloud-build class="link-gray text-emphasized css-truncate-target"><span>Cloud build</span></a>
 <span class="text-right Counter">3</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/compute-engine class="link-gray text-emphasized css-truncate-target"><span>Compute engine</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/container class="link-gray text-emphasized css-truncate-target"><span>Container</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/devops class="link-gray text-emphasized css-truncate-target"><span>Devops</span></a>
-<span class="text-right Counter">3</span></span>
+<span class="text-right Counter">4</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/docker class="link-gray text-emphasized css-truncate-target"><span>Docker</span></a>
 <span class="text-right Counter">3</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/essay class="link-gray text-emphasized css-truncate-target"><span>Essay</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/google-cloud class="link-gray text-emphasized css-truncate-target"><span>Google cloud</span></a>
 <span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/grpc class="link-gray text-emphasized css-truncate-target"><span>Grpc</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/iam class="link-gray text-emphasized css-truncate-target"><span>Iam</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/issue class="link-gray text-emphasized css-truncate-target"><span>Issue</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/java class="link-gray text-emphasized css-truncate-target"><span>Java</span></a>
-<span class="text-right Counter">1</span></span>
+<span class="text-right Counter">2</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/misc class="link-gray text-emphasized css-truncate-target"><span>Misc</span></a>
 <span class="text-right Counter">1</span></span>
-<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/programming class="link-gray text-emphasized css-truncate-target"><span>Programming</span></a>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/packer class="link-gray text-emphasized css-truncate-target"><span>Packer</span></a>
 <span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/programming class="link-gray text-emphasized css-truncate-target"><span>Programming</span></a>
+<span class="text-right Counter">2</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/secret-manager class="link-gray text-emphasized css-truncate-target"><span>Secret manager</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/spring class="link-gray text-emphasized css-truncate-target"><span>Spring</span></a>
-<span class="text-right Counter">1</span></span>
+<span class="text-right Counter">2</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/spring-boot class="link-gray text-emphasized css-truncate-target"><span>Spring boot</span></a>
-<span class="text-right Counter">1</span></span>
+<span class="text-right Counter">2</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/systemd class="link-gray text-emphasized css-truncate-target"><span>Systemd</span></a>
 <span class="text-right Counter">1</span></span></div><div class="Box Box--blue p-2 mb-3"><a href=/categories/ class=link-gray-dark><h4>Categories</h4></a></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">©Yoshi Yamaguchi 2021- &#183;
 Powered by the
