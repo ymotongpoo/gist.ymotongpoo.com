@@ -7,8 +7,8 @@
     <span class=nt>&#34;type&#34;</span><span class=p>:</span> <span class=s2>&#34;file&#34;</span>
   <span class=p>}</span>
 <span class=p>]</span>
-</code></pre></div><p>しかしこれを実行するとエラーになる。（次のログはCloud BuildでPackerを実行したログ）</p><pre><code class=language-console data-lang=console>Step #3 - &quot;build_gce_image&quot;: ==&gt; googlecompute: Uploading ./config/pyspabot.service =&gt; /etc/systemd/system/pyspabot.service
-Step #3 - &quot;build_gce_image&quot;: ==&gt; googlecompute: Upload failed: scp: /etc/systemd/system/pyspabot.service: Permission denied
+</code></pre></div><p>しかしこれを実行するとエラーになる。（次のログはCloud BuildでPackerを実行したログ）</p><pre><code class=language-console data-lang=console>Step #3 - &quot;build_gce_image&quot;: ==&gt; googlecompute: Uploading ./config/foo.service =&gt; /etc/systemd/system/foo.service
+Step #3 - &quot;build_gce_image&quot;: ==&gt; googlecompute: Upload failed: scp: /etc/systemd/system/foo.service: Permission denied
 </code></pre><p>コレに関しては7年前のIssueがいまだに出てくる。</p><ul><li><a href=https://github.com/hashicorp/packer/issues/1551>file provisioner permission denied #1551</a></li></ul><p>@mitchellh の回答がこれ。</p><blockquote><p>Yep, sorry, I believe the documentation states that you should upload to somewhere you have write access, then use a shell provisioner to move things over. I stand by this since supporting automatic copy is a little too magical for my taste.</p></blockquote><p>いけてなさすぎだと思うけど、そういうもんだと諦めた。</p><h2 id=ディレクトリーのコピーができない>ディレクトリーのコピーができない</h2><p>Packerでディレクトリーをまるごとコピーしたいと思ったのでカジュアルに次のような設定を書いた。</p><div class=highlight><pre class=chroma><code class=language-json data-lang=json><span class=s2>&#34;provisioners&#34;</span><span class=err>:</span> <span class=p>[</span>
   <span class=p>{</span>
     <span class=nt>&#34;destination&#34;</span><span class=p>:</span> <span class=s2>&#34;.&#34;</span><span class=p>,</span>
