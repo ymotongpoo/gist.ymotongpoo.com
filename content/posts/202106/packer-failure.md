@@ -22,8 +22,8 @@ tags: ["packer", "devops"]
 しかしこれを実行するとエラーになる。（次のログはCloud BuildでPackerを実行したログ）
 
 ```console
-Step #3 - "build_gce_image": ==> googlecompute: Uploading ./config/pyspabot.service => /etc/systemd/system/pyspabot.service
-Step #3 - "build_gce_image": ==> googlecompute: Upload failed: scp: /etc/systemd/system/pyspabot.service: Permission denied
+Step #3 - "build_gce_image": ==> googlecompute: Uploading ./config/foo.service => /etc/systemd/system/foo.service
+Step #3 - "build_gce_image": ==> googlecompute: Upload failed: scp: /etc/systemd/system/foo.service: Permission denied
 ```
 
 コレに関しては7年前のIssueがいまだに出てくる。
