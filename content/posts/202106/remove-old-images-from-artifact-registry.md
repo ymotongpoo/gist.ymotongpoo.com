@@ -118,7 +118,7 @@ Waiting for operation [projects/pyspa-bot/locations/us-west1/operations/0e5cc877
 
 ### タグでフィルター
 
-`tags` フィールドが一切値を返さず、フィルターも効いてないので、バグってんじゃないかと思う。（要確認）
+`tags` フィールドが一切値を返さず、フィルターも効いてないので、バグってんじゃないかと思う。
 
 ```console
 $ gcloud artifacts docker images list us-west1-docker.pkg.dev/pyspa-bot/pyspabot-images/pyspabot --format=yaml
@@ -146,4 +146,43 @@ Listing items under project pyspa-bot, location us-west1, repository pyspabot-im
 
 $ gcloud beta artifacts docker images list us-west1-docker.pkg.dev/pyspa-bot/pyspabot-images/pyspabot --format=yaml --filter="tags:test"
 Listing items under project pyspa-bot, location us-west1, repository pyspabot-images.
+```
+
+（追記）自分がドキュメントをちゃんと確認してなかった。 `--include-tags` オプションが必要。
+
+```
+$ gcloud artifacts docker images list --include-tags us-west1-docker.pkg.dev/pyspa-bot/pyspabot-images/pyspabot --format=yaml
+Listing items under project pyspa-bot, location us-west1, repository pyspabot-images.
+
+---
+createTime: '2021-06-20T14:46:43.873519Z'
+package: us-west1-docker.pkg.dev/pyspa-bot/pyspabot-images/pyspabot
+tags: ''
+updateTime: '2021-06-20T14:46:43.873519Z'
+version: sha256:0d7eff63aa9ff7c862cf82f7b55cc2cffd5fa4e1a614c6f8078c7719b3cfcb9e
+---
+createTime: '2021-06-20T04:31:56.181423Z'
+package: us-west1-docker.pkg.dev/pyspa-bot/pyspabot-images/pyspabot
+tags: ''
+updateTime: '2021-06-20T04:31:56.181423Z'
+version: sha256:243dcddafc996724341711fedb0d7f2164346e3884bf9ef35117ceee72d25878
+---
+createTime: '2021-06-20T15:06:21.839343Z'
+package: us-west1-docker.pkg.dev/pyspa-bot/pyspabot-images/pyspabot
+tags: ''
+updateTime: '2021-06-20T15:06:21.839343Z'
+version: sha256:94960087c94bb864af960e79d19554c2cced05044acfd9696459546204592eec
+---
+createTime: '2021-06-22T23:46:43.749375Z'
+package: us-west1-docker.pkg.dev/pyspa-bot/pyspabot-images/pyspabot
+tags: test
+updateTime: '2021-06-22T23:46:43.749375Z'
+version: sha256:afccd4610aecd32bd4acae9bac9e2bc3d3b7a85c9cd183e53d927dbed79e98df
+---
+createTime: '2021-06-22T15:06:25.205407Z'
+package: us-west1-docker.pkg.dev/pyspa-bot/pyspabot-images/pyspabot
+tags: ''
+updateTime: '2021-06-22T15:06:25.205407Z'
+version: sha256:f4b4f223862861acf3a9b59b226cdc3ebcf3714de39e3716f53ca4a19e12cc6c
+c
 ```
