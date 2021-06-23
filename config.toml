@@ -7,6 +7,7 @@ summaryLength = 70
 pygmentsCodeFences = true
 pygmentsUseClasses = true
 copyright = "&copy;Yoshi Yamaguchi 2021-"
+googleAnalytics = "UA-6420772-10"
 
 [params]
 description = "A brain dumps by Yoshi Yamaguchi."
