@@ -1,0 +1,21 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "new post",
+            "type": "shell",
+            "command": "hugo new posts/$(date +%Y%m)/${input:title}.md",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "title",
+            "description": "entry title",
+            "default": "",
+            "type": "promptString"
+        }
+    ]
+}
