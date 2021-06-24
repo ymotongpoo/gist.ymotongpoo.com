@@ -1,7 +1,7 @@
 ---
 title: "Vscode TasksでHugoの新規エントリーを書きやすくする"
 date: 2021-06-24T09:15:15+09:00
-draft: true
+draft: false
 tags: ["vscode", "hugo", "tips"]
 ---
 
