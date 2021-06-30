@@ -56,22 +56,32 @@ tags: ["python", "vscode", "flake8", "mypy", "isort", "black", "pyproject.toml",
 * Lint: [flake8](https://pypi.org/project/flake8)
 * Formatter: [black](https://pypi.org/project/black)
 * Type annotation: [mypy](https;//pypi.org/project/mypy)
+* テストランナー: [nox](https://pypi.org/project/nox)
 
 ## 設定
 
 なるべく `pyproject.toml` ファイルに寄せる運用にしたいが、flake8だけまだ対応できてないのは不満。（詳細は[ここ](https://github.com/PyCQA/flake8/issues/234)にある）
 
-flake8は `tox.ini` には対応してるのでとりあえずそちらで対応することにする。
+flake8は `setup.cfg` には対応してるのでとりあえずそちらで対応することにする。
 
-## `tox.ini`
+## `setup.cfg`
 
-```toml
+```ini
 [flake8]
 max-line-length = 88
 ignore = E203,W503,W504
+
+[mypy]
+ignore_missing_imports = true
+
+[isort]
+profile = black
 ```
 
+（WIP）
 ## 参考
 
 * https://mypy.readthedocs.io/en/stable/config_file.html
 * https://tox.readthedocs.io/en/latest/example/basic.html#pyproject-toml-tox-legacy-ini
+* https://tox.readthedocs.io/en/latest/config.html
+
