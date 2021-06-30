@@ -1,5 +1,18 @@
 <!doctype html><html><head><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga('create','UA-6420772-10','auto'),ga('send','pageview'))</script><script async src=https://www.google-analytics.com/analytics.js></script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Posts &ndash; gist::ymotongpoo</title><meta name=description property="og:description" content="A brain dumps by Yoshi Yamaguchi."><meta name=apple-mobile-web-app-title content="gist::ymotongpoo"><link rel=icon href=http://gist.ymotongpoo.devfavicon-64.png><link rel=apple-touch-icon href=http://gist.ymotongpoo.devapple-touch-icon.png><link rel=mask-icon size=any href=http://gist.ymotongpoo.devpinned-icon.svg><meta name=twitter:card content="summary"><meta name=twitter:site content="@ymotongpoo"><meta name=twitter:creator content="@ymotongpoo"><meta name=twitter:title content="Posts | gist::ymotongpoo"><meta name=twitter:description content="|A brain dumps by Yoshi Yamaguchi."><meta name=twitter:image content="http://gist.ymotongpoo.devtwitter-card.png"><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css><link rel=stylesheet href=/assets/custom_style.css></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Info</span></a>
-<a class="UnderlineNav-item selected" href=/posts/><span>Posts</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div><h1>Posts</h1><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/vscode-tasks-hugo-new/><div class="h2 mt-1 mb-1">Vscode TasksでHugoの新規エントリーを書きやすくする</div></a></div><div class=Subhead-description><a href=/tags/vscode class=muted-link><span class="Label Label--gray">vscode</span></a>
+<a class="UnderlineNav-item selected" href=/posts/><span>Posts</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div><h1>Posts</h1><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/sqlalchemy-dump-json/><div class="h2 mt-1 mb-1">SQLAlchemyで結果をJSONにダンプする</div></a></div><div class=Subhead-description><a href=/tags/python class=muted-link><span class="Label Label--gray">python</span></a>
+<a href=/tags/sqlalchemy class=muted-link><span class="Label Label--gray">sqlalchemy</span></a>
+<a href=/tags/postgresql class=muted-link><span class="Label Label--gray">postgresql</span></a>
+<a href=/tags/orm class=muted-link><span class="Label Label--gray">orm</span></a>
+<a href=/tags/json class=muted-link><span class="Label Label--gray">json</span></a><div class=float-md-right><span>2021-06-30</span></div></div></div><div class=text-gray>SQLAlchemy: v1.4 ORM APIを使ってデータを取得する まずこういうようなコードがあったとする。 from datetime import datetime import sqlalchemy from sqlalchemy import Column, DateTime, Integer, String from sqlalchemy.ext.declarative import declarative_base from sqlalchemy.orm import sessionmaker Base = declarative_base() class User(Base): __tablename__ == "users" id = Column(Integer(),
+<a class=muted-link href=/posts/202106/sqlalchemy-dump-json/>…</a></div></div><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/python-vscode-setting/><div class="h2 mt-1 mb-1">Python用のVS Codeの設定</div></a></div><div class=Subhead-description><a href=/tags/python class=muted-link><span class="Label Label--gray">python</span></a>
+<a href=/tags/vscode class=muted-link><span class="Label Label--gray">vscode</span></a>
+<a href=/tags/flake8 class=muted-link><span class="Label Label--gray">flake8</span></a>
+<a href=/tags/mypy class=muted-link><span class="Label Label--gray">mypy</span></a>
+<a href=/tags/isort class=muted-link><span class="Label Label--gray">isort</span></a>
+<a href=/tags/black class=muted-link><span class="Label Label--gray">black</span></a>
+<a href=/tags/pyproject.toml class=muted-link><span class="Label Label--gray">pyproject.toml</span></a>
+<a href=/tags/tox.ini class=muted-link><span class="Label Label--gray">tox.ini</span></a><div class=float-md-right><span>2021-06-25</span></div></div></div><div class=text-gray>TL;DR { "[python]": { "gitlens.codeLens.symbolScopes": [ "!Module" ], "editor.wordBasedSuggestions": false, "editor.formatOnSave": true, "editor.formatOnPaste": false, "editor.insertSpaces": true, "editor.tabSize": 4, "editor.codeActionsOnSave": { "source.organizeImports": true } }, "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python3", "python.pythonPath": "${workspaceFolder}/.venv/bin/python", "files.watcherExclude": { "**/.venv/**": true, "**/.git/objects/**": true, "**/.git/subtree-cache/**": true }, "python.linting.pylintEnabled": false, "python.linting.flake8Enabled": true, "python.linting.lintOnSave": true, "python.linting.flake8Args": [ "--config", "${workspaceFolder}/tox.ini" ], "python.formatting.provider": "black", "python.formatting.blackPath": "${workspaceFolder}/.venv/bin/black", "python.sortImports.path": "${workspaceFolder}/.venv/bin/isort", "python.linting.mypyEnabled": true, "python.linting.mypyPath": "${workspaceFolder}/.venv/bin/mypy", "python.linting.mypyArgs": [ "--follow-imports=silent", "--show-column-numbers", "--config-file", "pyproject.toml" ], "autoDocstring.docstringFormat": "google" } 使う
+<a class=muted-link href=/posts/202106/python-vscode-setting/>…</a></div></div><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/vscode-tasks-hugo-new/><div class="h2 mt-1 mb-1">Vscode TasksでHugoの新規エントリーを書きやすくする</div></a></div><div class=Subhead-description><a href=/tags/vscode class=muted-link><span class="Label Label--gray">vscode</span></a>
 <a href=/tags/hugo class=muted-link><span class="Label Label--gray">hugo</span></a>
 <a href=/tags/tips class=muted-link><span class="Label Label--gray">tips</span></a><div class=float-md-right><span>2021-06-24</span></div></div></div><div class=text-gray>このブログはHugoで書いているわけだけど、さっとメモを取りたいときにいちいちターミナルでコマンドを叩くのは面倒。なのでVSCodeのtas
 <a class=muted-link href=/posts/202106/vscode-tasks-hugo-new/>…</a></div></div><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/e34-3/><div class="h2 mt-1 mb-1">e34.fm #3 感想など</div></a></div><div class=Subhead-description><a href=/tags/sre class=muted-link><span class="Label Label--gray">sre</span></a>
@@ -33,15 +46,12 @@
 <a href=/tags/java class=muted-link><span class="Label Label--gray">java</span></a>
 <a href=/tags/docker class=muted-link><span class="Label Label--gray">docker</span></a>
 <a href=/tags/programming class=muted-link><span class="Label Label--gray">programming</span></a><div class=float-md-right><span>2021-06-18</span></div></div></div><div class=text-gray>SpringとSpring Boot この辺の記事を読んだ。 https://licensecounter.jp/devops-hub/blog/spring-boot1/ https://licensecounter.jp/devops-hub/blog/spring-boot2/ https://qiita.com/suke_masa/items/9dd3300c3190d6445ff8 ざっくりとした理解は Spring 様々なコンポーネント群からなるフレームワーク 他のJavaフレー
-<a class=muted-link href=/posts/202106/spring-boot/>…</a></div></div><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/red-pickled-ginger/><div class="h2 mt-1 mb-1">紅生姜</div></a></div><div class=Subhead-description><a href=/tags/essay class=muted-link><span class="Label Label--gray">essay</span></a><div class=float-md-right><span>2021-06-18</span></div></div></div><div class=text-gray>子供と夕食後に遊んでいたら、ニューブロックで何やら作り始めて、「はい、お父さん、紅生姜だよ、どうぞ！」と持ってきた。 おそらく、家で焼きそばや
-<a class=muted-link href=/posts/202106/red-pickled-ginger/>…</a></div></div><div class="rounded-2 box-shadow-medium px-3 pb-2 pt-2 mb-3"><div class="Subhead mb-2"><div class=Subhead-heading><a href=/posts/202106/cloud-build-service-account/><div class="h2 mt-1 mb-1">Cloud Buildで独自のService Accountを使う</div></a></div><div class=Subhead-description><a href=/tags/google-cloud class=muted-link><span class="Label Label--gray">google-cloud</span></a>
-<a href=/tags/cloud-build class=muted-link><span class="Label Label--gray">cloud-build</span></a>
-<a href=/tags/iam class=muted-link><span class="Label Label--gray">iam</span></a>
-<a href=/tags/cicd class=muted-link><span class="Label Label--gray">cicd</span></a><div class=float-md-right><span>2021-06-17</span></div></div></div><div class=text-gray>serviceAccount セクション 最近になって cloudbuild.yaml で serviceAccount セクションがbetaで追加されていた。 Build configuration overview | Cloud Build とりあえず次のように設定して手動トリガーで試してみたら動いた
-<a class=muted-link href=/posts/202106/cloud-build-service-account/>…</a></div></div><nav class=paginate-container><div class=pagination><ul><span class="previous_page disabled">Prev</span>
+<a class=muted-link href=/posts/202106/spring-boot/>…</a></div></div><nav class=paginate-container><div class=pagination><ul><span class="previous_page disabled">Prev</span>
 <em class="current selected" aria-current=true>1</em>
 <a href=/posts/page/2/>2</a>
 <a href=/posts/page/2/ class=next_page>Next</a></ul></div></nav></div></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div class="Box Box--blue p-2 mb-3 mt-5"><a href=/tags/ class=link-gray-dark><h4>Tags</h4></a><span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/artifact-registry class="link-gray text-emphasized css-truncate-target"><span>Artifact registry</span></a>
+<span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/black class="link-gray text-emphasized css-truncate-target"><span>Black</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/cicd class="link-gray text-emphasized css-truncate-target"><span>Cicd</span></a>
 <span class="text-right Counter">3</span></span>
@@ -57,6 +67,8 @@
 <span class="text-right Counter">3</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/essay class="link-gray text-emphasized css-truncate-target"><span>Essay</span></a>
 <span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/flake8 class="link-gray text-emphasized css-truncate-target"><span>Flake8</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/google-cloud class="link-gray text-emphasized css-truncate-target"><span>Google cloud</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/grpc class="link-gray text-emphasized css-truncate-target"><span>Grpc</span></a>
@@ -65,19 +77,33 @@
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/iam class="link-gray text-emphasized css-truncate-target"><span>Iam</span></a>
 <span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/isort class="link-gray text-emphasized css-truncate-target"><span>Isort</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/issue class="link-gray text-emphasized css-truncate-target"><span>Issue</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/java class="link-gray text-emphasized css-truncate-target"><span>Java</span></a>
 <span class="text-right Counter">2</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/json class="link-gray text-emphasized css-truncate-target"><span>JSON</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/misc class="link-gray text-emphasized css-truncate-target"><span>Misc</span></a>
 <span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/mypy class="link-gray text-emphasized css-truncate-target"><span>Mypy</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/notes class="link-gray text-emphasized css-truncate-target"><span>Notes</span></a>
+<span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/orm class="link-gray text-emphasized css-truncate-target"><span>Orm</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/packer class="link-gray text-emphasized css-truncate-target"><span>Packer</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/podcast class="link-gray text-emphasized css-truncate-target"><span>Podcast</span></a>
 <span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/postgresql class="link-gray text-emphasized css-truncate-target"><span>Postgresql</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/programming class="link-gray text-emphasized css-truncate-target"><span>Programming</span></a>
+<span class="text-right Counter">2</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/pyproject.toml class="link-gray text-emphasized css-truncate-target"><span>Pyproject.Toml</span></a>
+<span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/python class="link-gray text-emphasized css-truncate-target"><span>Python</span></a>
 <span class="text-right Counter">2</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/secret-manager class="link-gray text-emphasized css-truncate-target"><span>Secret manager</span></a>
 <span class="text-right Counter">1</span></span>
@@ -85,6 +111,8 @@
 <span class="text-right Counter">2</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/spring-boot class="link-gray text-emphasized css-truncate-target"><span>Spring boot</span></a>
 <span class="text-right Counter">2</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/sqlalchemy class="link-gray text-emphasized css-truncate-target"><span>Sqlalchemy</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/sre class="link-gray text-emphasized css-truncate-target"><span>Sre</span></a>
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/systemd class="link-gray text-emphasized css-truncate-target"><span>Systemd</span></a>
@@ -93,8 +121,10 @@
 <span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/tips class="link-gray text-emphasized css-truncate-target"><span>Tips</span></a>
 <span class="text-right Counter">1</span></span>
+<span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/tox.ini class="link-gray text-emphasized css-truncate-target"><span>Tox.Ini</span></a>
+<span class="text-right Counter">1</span></span>
 <span class="css-truncate no-wrap m-1 pl-1"><a href=/tags/vscode class="link-gray text-emphasized css-truncate-target"><span>Vscode</span></a>
-<span class="text-right Counter">1</span></span></div><div class="Box Box--blue p-2 mb-3"><a href=/categories/ class=link-gray-dark><h4>Categories</h4></a></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">©Yoshi Yamaguchi 2021- &#183;
+<span class="text-right Counter">2</span></span></div><div class="Box Box--blue p-2 mb-3"><a href=/categories/ class=link-gray-dark><h4>Categories</h4></a></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">©Yoshi Yamaguchi 2021- &#183;
 Powered by the
 <a href=https://github.com/qqhann/hugo-primer class=link-gray-dark>Hugo-Primer</a> theme for
 <a href=https://gohugo.io class=link-gray-dark>Hugo</a>.</span></div></div><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script></body></html>
