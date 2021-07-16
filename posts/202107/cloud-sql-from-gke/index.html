@@ -1,0 +1,73 @@
+<!doctype html><html><head><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga('create','UA-6420772-10','auto'),ga('send','pageview'))</script><script async src=https://www.google-analytics.com/analytics.js></script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>GKEからCloud SQLにアクセスする &ndash; gist::ymotongpoo</title><meta name=description property="og:description" content="Kubernetesクラスタを更新する Workload Identityを有効にしていなかったらまずその設定を行う。 gcloud container clusters update &amp;lt;cluster-name&amp;gt; \ --workload-pool=&amp;lt;project_id&amp;gt;.svc.id.goog 自分の場合の例 gcloud container clusters update trace-sample --workload-pool=trace-microservices-sample.svc.id.goog|A brain dumps by Yoshi Yamaguchi."><meta name=apple-mobile-web-app-title content="gist::ymotongpoo"><link rel=icon href=http://gist.ymotongpoo.devfavicon-64.png><link rel=apple-touch-icon href=http://gist.ymotongpoo.devapple-touch-icon.png><link rel=mask-icon size=any href=http://gist.ymotongpoo.devpinned-icon.svg><meta name=twitter:card content="summary"><meta name=twitter:site content="@ymotongpoo"><meta name=twitter:creator content="@ymotongpoo"><meta name=twitter:title content="GKEからCloud SQLにアクセスする | gist::ymotongpoo"><meta name=twitter:description content="Kubernetesクラスタを更新する Workload Identityを有効にしていなかったらまずその設定を行う。 gcloud container clusters update <cluster-name> \ --workload-pool=<project_id>.svc.id.goog 自分の場合の例 gcloud container clusters update trace-sample --workload-pool=trace-microservices-sample.svc.id.goog|A brain dumps by Yoshi Yamaguchi."><meta name=twitter:image content="http://gist.ymotongpoo.devtwitter-card.png"><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css><link rel=stylesheet href=/assets/custom_style.css></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Info</span></a>
+<a class=UnderlineNav-item href=/posts/><span>Posts</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div class=Subhead><div class=Subhead-heading><div class="h1 mt-3 mb-1">GKEからCloud SQLにアクセスする</div></div><div class=Subhead-description><a href=/tags/cloud-sql class=muted-link><span class="Label Label--gray">cloud-sql</span></a>
+<a href=/tags/kubernetes class=muted-link><span class="Label Label--gray">kubernetes</span></a>
+<a href=/tags/google-kubernetes-engine class=muted-link><span class="Label Label--gray">google-kubernetes-engine</span></a>
+<a href=/tags/iam class=muted-link><span class="Label Label--gray">iam</span></a><div class=float-md-right><span title="Lastmod: 2021-07-16. Published at: 2021-07-16.">Published: 2021-07-16</span></div></div></div><article><section class="pb-6 mb-3 border-bottom"><h2 id=kubernetesクラスタを更新する>Kubernetesクラスタを更新する</h2><p>Workload Identityを有効にしていなかったらまずその設定を行う。</p><pre><code class=language-console data-lang=console>gcloud container clusters update &lt;cluster-name&gt; \
+--workload-pool=&lt;project_id&gt;.svc.id.goog
+</code></pre><p>自分の場合の例</p><pre><code class=language-console data-lang=console>gcloud container clusters update trace-sample --workload-pool=trace-microservices-sample.svc.id.goog
+Updating trace-sample...done.
+Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-b/clusters/trace-sample].
+To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-west1-b/trace-sample?project=trace-microservices-sample
+</code></pre><h2 id=kubernetes-secretの作成>Kubernetes Secretの作成</h2><pre><code class=language-console data-lang=console>$ kubectl create secret generic cloud-sql-secret \
+--from-literal=username=&lt;Cloud SQL username&gt; \
+--from-literal=password=&lt;Cloud SQL password&gt; \
+--from-literal=database=&lt;Cloud SQL database&gt;
+</code></pre><p>自分の場合の例</p><pre><code class=language-console data-lang=console>$ kubectl create secret generic cloud-sql-secret \
+--from-literal=username=postgres \
+--from-literal=password=XXXXXXXXXXXXXXXX \
+--from-literal=database=xxxxxxxxxxxxxxxx
+secret/cloud-sql-secret created
+</code></pre><p>これを作るとGKEのConfigurationsでSecretが作成されたことが確認できる。</p><figure><img src=/image/202107/20210716-1.png></figure><h2 id=kubernetes-service-account-ksa-の作成>Kubernetes Service Account (KSA) の作成</h2><pre><code class=language-console data-lang=console>$ kubectl create namespace &lt;namespace_name&gt;
+$ kubectl create serviceaccount &lt;ksa_name&gt; --namespace &lt;namespace_name&gt;
+</code></pre><p>自分の場合は横着してdefaultネームスペースを使ってしまった</p><pre><code class=language-console data-lang=console>$ kubectl create serviceaccount cloud-sql-ksa --namespace default
+serviceaccount/cloud-sql-ksa created
+
+$ kubectl get serviceaccount --namespace default
+NAME            SECRETS   AGE
+cloud-sql-ksa   1         21s
+default         1         10d
+</code></pre><h2 id=google-cloud-service-account-gsa-の作成>Google Cloud Service Account (GSA) の作成</h2><p>まず新規Google Cloud Service Accountを作成する。</p><pre><code class=language-console data-lang=console>$ gcloud iam service-accounts create &lt;gsa_name&gt;
+</code></pre><p>つづいて作ったGSAに対してCloud SQLのアクセス権限を付与する</p><pre><code class=language-console data-lang=console>$ gcloud projects add-iam-policy-binding &lt;project_id&gt; \
+--member serviceAccount:&lt;gsa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com \
+--role roles/cloudsql.client
+</code></pre><p>自分の例</p><pre><code class=language-console data-lang=console>$ gcloud iam service-accounts create cloud-sql-gsa
+Created service account [cloud-sql-gsa].
+
+$ gcloud projects add-iam-policy-binding trace-microservices-sample \
+--member serviceAccount:cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com \
+--role roles/cloudsql.client
+Updated IAM policy for project [trace-microservices-sample].
+bindings:
+- members:
+  ...(略)...
+etag: BwXHNz0zmqE=
+version: 1
+</code></pre><h2 id=gsaとksaの紐付け>GSAとKSAの紐付け</h2><pre><code class=language-console data-lang=console>gcloud iam service-accounts add-iam-policy-binding \
+--role roles/iam.workloadIdentityUser \
+--member &quot;serviceAccount:&lt;project_id&gt;.svc.id.goog[&lt;kubernetes_namespace&gt;/&lt;ksa_name&gt;]&quot; \
+&lt;gsa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com
+</code></pre><p>自分の場合の例</p><pre><code class=language-console data-lang=console>$ gcloud iam service-accounts add-iam-policy-binding \
+--role roles/iam.workloadIdentityUser \
+--member &quot;serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]&quot; \
+cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
+Updated IAM policy for serviceAccount [cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com].
+bindings:
+- members:
+  - serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]
+  role: roles/iam.workloadIdentityUser
+etag: BwXHN6fhkC0=
+version: 1
+</code></pre><h2 id=ksaにアノテーションを追加する>KSAにアノテーションを追加する</h2><pre><code class=language-console data-lang=console>kubectl annotate serviceaccount \
+   &lt;ksa_name&gt; \
+   iam.gke.io/gcp-service-account=&lt;ksa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com
+</code></pre><p>自分の場合</p><pre><code class=language-console data-lang=console>kubectl annotate serviceaccount \
+   cloud-sql-ksa \
+   iam.gke.io/gcp-service-account=cloud-sql-ksa@trace-microservices-sample.iam.gserviceaccount.com
+
+serviceaccount/cloud-sql-ksa annotated
+</code></pre><h2 id=参考>参考</h2><ul><li><a href=https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity>https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity</a></li><li><a href=https://cloud.google.com/sql/docs/sqlserver/connect-kubernetes-engine>https://cloud.google.com/sql/docs/sqlserver/connect-kubernetes-engine</a></li><li><a href=https://y-ohgi.blog/entry/2020/08/19/GKE%E3%81%AEWorkloadIdentity%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E3%83%A2%E3%83%80%E3%83%B3%E3%81%AA%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E5%88%B6%E5%BE%A1%E3%82%92%E5%AE%9F%E7%8F%BE%E3%81%99%E3%82%8B>https://y-ohgi.blog/entry/2020/08/19/GKE%E3%81%AEWorkloadIdentity%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E3%83%A2%E3%83%80%E3%83%B3%E3%81%AA%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E5%88%B6%E5%BE%A1%E3%82%92%E5%AE%9F%E7%8F%BE%E3%81%99%E3%82%8B</a></li><li><a href=https://stackoverflow.com/questions/65948131/unable-to-bind-google-service-account-to-kubernetes-service-account>https://stackoverflow.com/questions/65948131/unable-to-bind-google-service-account-to-kubernetes-service-account</a></li></ul></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>GKEからCloud SQLにアクセスする</b><nav id=TableOfContents><ul><li><a href=#kubernetesクラスタを更新する>Kubernetesクラスタを更新する</a></li><li><a href=#kubernetes-secretの作成>Kubernetes Secretの作成</a></li><li><a href=#kubernetes-service-account-ksa-の作成>Kubernetes Service Account (KSA) の作成</a></li><li><a href=#google-cloud-service-account-gsa-の作成>Google Cloud Service Account (GSA) の作成</a></li><li><a href=#gsaとksaの紐付け>GSAとKSAの紐付け</a></li><li><a href=#ksaにアノテーションを追加する>KSAにアノテーションを追加する</a></li><li><a href=#参考>参考</a></li></ul></nav></div><div><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class=twitter-share-button data-show-count=false>Tweet</a><script async src=https://platform.twitter.com/widgets.js></script>
+<iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width=61 height=20 style=border:none;overflow:hidden scrolling=no frameborder=0 allowtransparency=true allow=encrypted-media></iframe>
+<a href=http://b.hatena.ne.jp/entry/ class=hatena-bookmark-button data-hatena-bookmark-layout=basic-label-counter data-hatena-bookmark-lang=ja title=このエントリーをはてなブックマークに追加><img src=https://b.st-hatena.com/images/entry-button/button-only@2x.png alt=このエントリーをはてなブックマークに追加 width=20 height=20 style=border:none></a><script type=text/javascript src=https://b.st-hatena.com/js/bookmark_button.js async></script></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">©Yoshi Yamaguchi 2021- &#183;
+Powered by the
+<a href=https://github.com/qqhann/hugo-primer class=link-gray-dark>Hugo-Primer</a> theme for
+<a href=https://gohugo.io class=link-gray-dark>Hugo</a>.</span></div></div><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script></body></html>
