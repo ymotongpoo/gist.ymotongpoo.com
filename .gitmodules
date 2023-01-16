@@ -1,3 +1,4 @@
-[submodule "themes/hugo-primer"]
-	path = themes/hugo-primer
-	url = https://github.com/qqhann/hugo-primer.git
+[submodule "themes/archie"]
+	path = themes/archie
+	url = https://github.com/athul/archie.git
+
