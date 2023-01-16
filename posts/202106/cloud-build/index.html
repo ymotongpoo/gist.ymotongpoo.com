@@ -15,7 +15,7 @@
 <script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js onload=renderMathInElement(document.body)></script>
 <script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})})</script></head><body><div class=content><header><div class=main><a href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a></div><nav><a href=/>Home</a>
 <a href=/>Info</a>
-<a href=/posts>Posts</a>
+<a href=/posts/>Posts</a>
 <a href=/about>About</a></nav></header><main><article><div class=title><h1 class=title>Cloud Buildの設定で手間取ったところ</h1><div class=meta>Posted on Jun 19, 2021</div></div><section class=body><h2 id=secret-managerで取得した値をdockerプロセスに渡せない>Secret Managerで取得した値をDockerプロセスに渡せない</h2><p><a href=https://cloud.google.com/build/docs/securing-builds/use-secrets>Cloud Buildのドキュメント</a>にあるように</p><ul><li><code>entrypoint</code> フィールドで <code>bash</code> を指定</li><li><code>args</code> で <code>$$</code> 接頭辞付きでシークレットの代入変数を指定</li></ul><p>したにも関わらずデータが渡ってなかった。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#81a1c1>steps</span><span style=color:#eceff4>:</span>
 </span></span><span style=display:flex><span>- <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> <span style=color:#a3be8c>&#39;gcr.io/cloud-builders/docker&#39;</span>
 </span></span><span style=display:flex><span>  <span style=color:#81a1c1>entrypoint</span><span style=color:#eceff4>:</span> bash

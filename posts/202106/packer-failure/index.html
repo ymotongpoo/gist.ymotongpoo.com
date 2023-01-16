@@ -15,7 +15,7 @@
 <script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js onload=renderMathInElement(document.body)></script>
 <script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})})</script></head><body><div class=content><header><div class=main><a href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a></div><nav><a href=/>Home</a>
 <a href=/>Info</a>
-<a href=/posts>Posts</a>
+<a href=/posts/>Posts</a>
 <a href=/about>About</a></nav></header><main><article><div class=title><h1 class=title>PackerのFile Provisionerでできないこと</h1><div class=meta>Posted on Jun 21, 2021</div></div><section class=body><h2 id=root権限が使えない>root権限が使えない</h2><p>たとえばSystemdの <code>.service</code> ファイルを所定の場所に置くために次のように書いた。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span><span style=color:#a3be8c>&#34;provisioners&#34;</span><span style=color:#bf616a>:</span> <span style=color:#eceff4>[</span>
 </span></span><span style=display:flex><span>  <span style=color:#eceff4>{</span>
 </span></span><span style=display:flex><span>    <span style=color:#81a1c1>&#34;destination&#34;</span><span style=color:#eceff4>:</span> <span style=color:#a3be8c>&#34;/etc/systemd/system/foo.service&#34;</span><span style=color:#eceff4>,</span>

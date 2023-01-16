@@ -15,7 +15,7 @@
 <script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js onload=renderMathInElement(document.body)></script>
 <script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})})</script></head><body><div class=content><header><div class=main><a href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a></div><nav><a href=/>Home</a>
 <a href=/>Info</a>
-<a href=/posts>Posts</a>
+<a href=/posts/>Posts</a>
 <a href=/about>About</a></nav></header><main><article><div class=title><h1 class=title>GKEからCloud SQLにアクセスする</h1><div class=meta>Posted on Jul 16, 2021</div></div><section class=body><h2 id=kubernetesとgoogle-cloudの設定を行う>KubernetesとGoogle Cloudの設定を行う</h2><h3 id=kubernetesクラスタを更新する>Kubernetesクラスタを更新する</h3><p>Workload Identityを有効にしていなかったらまずその設定を行う。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>gcloud container clusters update &lt;cluster-name&gt; \
 </span></span><span style=display:flex><span>--workload-pool=&lt;project_id&gt;.svc.id.goog
 </span></span></code></pre></div><p>自分の場合の例</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>gcloud container clusters update trace-sample --workload-pool=trace-microservices-sample.svc.id.goog

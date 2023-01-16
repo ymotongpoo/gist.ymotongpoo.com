@@ -15,7 +15,7 @@
 <script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js onload=renderMathInElement(document.body)></script>
 <script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})})</script></head><body><div class=content><header><div class=main><a href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a></div><nav><a href=/>Home</a>
 <a href=/>Info</a>
-<a href=/posts>Posts</a>
+<a href=/posts/>Posts</a>
 <a href=/about>About</a></nav></header><main><article><div class=title><h1 class=title>GKEクラスターをVPCネイティブで作成する</h1><div class=meta>Posted on Jul 20, 2021</div></div><section class=body><h2 id=作業ログ>作業ログ</h2><p>作成されたクラスターの確認。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud container clusters list
 </span></span><span style=display:flex><span>NAME          LOCATION    MASTER_VERSION   MASTER_IP      MACHINE_TYPE  NODE_VERSION     NUM_NODES  STATUS
 </span></span><span style=display:flex><span>trace-sample  us-west1-a  1.19.9-gke.1900  34.83.239.113  e2-medium     1.19.9-gke.1900  3          RUNNING
