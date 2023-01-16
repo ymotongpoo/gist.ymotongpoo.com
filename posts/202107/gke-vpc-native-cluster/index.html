@@ -1,127 +1,139 @@
-<!doctype html><html><head><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga('create','UA-6420772-10','auto'),ga('send','pageview'))</script><script async src=https://www.google-analytics.com/analytics.js></script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>GKEクラスターをVPCネイティブで作成する &ndash; gist::ymotongpoo</title><meta name=description property="og:description" content="作業ログ 作成されたクラスターの確認。 $ gcloud container clusters list NAME LOCATION MASTER_VERSION MASTER_IP MACHINE_TYPE NODE_VERSION NUM_NODES STATUS trace-sample us-west1-a 1.19.9-gke.1900 34.83.239.113 e2-medium 1.19.9-gke.1900 3 RUNNING ノードプールの更新。 $ gcloud container node-pools update default-pool --cluster=trace-sample --workload-metadata=GKE_METADATA --zone=us-west1-a Updating node pool default-pool...done. Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-a/clusters/trace-sample/nodePools/default-pool]. 次はKube|A brain dumps by Yoshi Yamaguchi."><meta name=apple-mobile-web-app-title content="gist::ymotongpoo"><link rel=icon href=http://gist.ymotongpoo.devfavicon-64.png><link rel=apple-touch-icon href=http://gist.ymotongpoo.devapple-touch-icon.png><link rel=mask-icon size=any href=http://gist.ymotongpoo.devpinned-icon.svg><meta name=twitter:card content="summary"><meta name=twitter:site content="@ymotongpoo"><meta name=twitter:creator content="@ymotongpoo"><meta name=twitter:title content="GKEクラスターをVPCネイティブで作成する | gist::ymotongpoo"><meta name=twitter:description content="作業ログ 作成されたクラスターの確認。 $ gcloud container clusters list NAME LOCATION MASTER_VERSION MASTER_IP MACHINE_TYPE NODE_VERSION NUM_NODES STATUS trace-sample us-west1-a 1.19.9-gke.1900 34.83.239.113 e2-medium 1.19.9-gke.1900 3 RUNNING ノードプールの更新。 $ gcloud container node-pools update default-pool --cluster=trace-sample --workload-metadata=GKE_METADATA --zone=us-west1-a Updating node pool default-pool...done. Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-a/clusters/trace-sample/nodePools/default-pool]. 次はKube|A brain dumps by Yoshi Yamaguchi."><meta name=twitter:image content="http://gist.ymotongpoo.devtwitter-card.png"><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css><link rel=stylesheet href=/assets/custom_style.css></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Info</span></a>
-<a class=UnderlineNav-item href=/posts/><span>Posts</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div class=Subhead><div class=Subhead-heading><div class="h1 mt-3 mb-1">GKEクラスターをVPCネイティブで作成する</div></div><div class=Subhead-description><a href=/tags/google-kubernetes-engine class=muted-link><span class="Label Label--gray">google-kubernetes-engine</span></a>
-<a href=/tags/vpc class=muted-link><span class="Label Label--gray">vpc</span></a>
-<a href=/tags/kubernetes class=muted-link><span class="Label Label--gray">kubernetes</span></a>
-<a href=/tags/network class=muted-link><span class="Label Label--gray">network</span></a><div class=float-md-right><span title="Lastmod: 2021-07-20. Published at: 2021-07-20.">Published: 2021-07-20</span></div></div></div><article><section class="pb-6 mb-3 border-bottom"><h2 id=作業ログ>作業ログ</h2><p>作成されたクラスターの確認。</p><pre><code class=language-console data-lang=console>$ gcloud container clusters list
-NAME          LOCATION    MASTER_VERSION   MASTER_IP      MACHINE_TYPE  NODE_VERSION     NUM_NODES  STATUS
-trace-sample  us-west1-a  1.19.9-gke.1900  34.83.239.113  e2-medium     1.19.9-gke.1900  3          RUNNING
-</code></pre><p>ノードプールの更新。</p><pre><code class=language-console data-lang=console>$ gcloud container node-pools update default-pool --cluster=trace-sample --workload-metadata=GKE_METADATA --zone=us-west1-a
-Updating node pool default-pool...done.
-Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-a/clusters/trace-sample/nodePools/default-pool].
-</code></pre><p>次はKubernetes Secretの作成。</p><pre><code class=language-console data-lang=console>$ kubectl create secret generic cloud-sql-secret \
-&gt; --from-literal=username=postgres \
-&gt; --from-literal=password=xxxxxxxxxxxxxxxxx \
-&gt; --from-literal=database=shoe_database
-error: failed to create secret Post &quot;http://localhost:8080/api/v1/namespaces/default/secrets?fieldManager=kubectl-create&quot;: dial tcp [::1]:8080: connect: connection refused
-</code></pre><p>前と同じ名前でクラスター作ったけど <code>kubectl</code> がアクセスできない。</p><pre><code class=language-console data-lang=console>$ gcloud container clusters get-credentials trace-sample
-Fetching cluster endpoint and auth data.
-kubeconfig entry generated for trace-sample.
-</code></pre><p>KSAを作成</p><pre><code class=language-console data-lang=console>$ kubectl create serviceaccount cloud-sql-ksa --namespace default
-serviceaccount/cloud-sql-ksa created
-
-$ kubectl get serviceaccount --namespace default
-NAME            SECRETS   AGE
-cloud-sql-ksa   1         12s
-default         1         46m
-</code></pre><p>GSAは前に作ってあるので、KSAとGSAの紐付けを行う。</p><pre><code class=language-console data-lang=console>$ gcloud iam service-accounts add-iam-policy-binding \
-&gt; --role roles/iam.workloadIdentityUser \
-&gt; --member &quot;serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]&quot; \
-&gt; cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
-Updated IAM policy for serviceAccount [cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com].
-bindings:
-- members:
-  - serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]
-  role: roles/iam.workloadIdentityUser
-etag: BwXHhKG7SRo=
-version: 1
-</code></pre><p>KSAにアノテーションを追加する</p><pre><code class=language-console data-lang=console>$ kubectl annotate serviceaccount cloud-sql-ksa iam.gke.io/gcp-service-account=cloud-sql-ksa@trace-microservices-sample.iam.gserviceaccount.com
-serviceaccount/cloud-sql-ksa annotated
-</code></pre><p>これで実行してみる</p><pre><code>$ skaffold dev
-...(略)...
-Waiting for deployments to stabilize...
- - deployment/appservice: 0/3 nodes are available: 3 Insufficient cpu.
-    - pod/appservice-5bfd679945-lb924: 0/3 nodes are available: 3 Insufficient cpu.
- - deployment/clientservice: creating container clientservice
-    - pod/clientservice-645fcb6957-4rqrk: creating container clientservice
- - deployment/appservice: 0/3 nodes are available: 3 Insufficient cpu.
-    - pod/appservice-5bfd679945-lb924: 0/3 nodes are available: 3 Insufficient cpu.
- - deployment/appservice failed. Error: 0/3 nodes are available: 3 Insufficient cpu..
-Cleaning up...
-...(略)...
-</code></pre><pre><code class=language-console data-lang=console>$ kubectl apply -f test.yaml
-pod/workload-identity-test created
-~/corp/k8stest ☁️ trace-sample
-
-$ kubectl exec -it workload-identity-test --namespace default -- /bin/bash
-error: unable to upgrade connection: container not found (&quot;workload-identity-test&quot;)
-
-$ kubectl get pods
-NAME                     READY   STATUS    RESTARTS   AGE
-workload-identity-test   1/1     Running   0          41s
-
-$ kubectl exec -it workload-identity-test --namespace default -- /bin/bash
-root@workload-identity-test:/# gcloud auth list
-                         Credentialed Accounts
-ACTIVE  ACCOUNT
-*       cloud-sql-ksa@trace-microservices-sample.iam.gserviceaccount.com
-
-To set the active account, run:
-    $ gcloud config set account `ACCOUNT`
-</code></pre><p>Kubernetesクラスタに対してサービスアカウントのapplyをしてなかったことに気がつく。</p><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>v1</span><span class=w>
-</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>ServiceAccount</span><span class=w>
-</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
-</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>cloud-sql-ksa</span><span class=w>
-</span></code></pre></div><pre><code class=language-console data-lang=console>$ kubectl apply -f service-account.yaml
-serviceaccount/cloud-sql-ksa created
-</code></pre><p>あらためて実行。</p><pre><code class=language-console data-lang=console>$ skaffold dev
-...(略)...
- - deployment/appservice: container cloud-sql-proxy terminated with exit code 1
-    - pod/appservice-69d6447d6c-dsmls: container cloud-sql-proxy terminated with exit code 1
-      &gt; [appservice-69d6447d6c-dsmls cloud-sql-proxy] 2021/07/16 07:48:01 current FDs rlimit set to 1048576, wanted limit is 8500. Nothing to do here.
-      &gt; [appservice-69d6447d6c-dsmls cloud-sql-proxy] 2021/07/16 07:48:02 errors parsing config:
-      &gt; [appservice-69d6447d6c-dsmls cloud-sql-proxy]   googleapi: Error 403: The client is not authorized to make this request., notAuthorized
- - deployment/appservice failed. Error: container cloud-sql-proxy terminated with exit code 1.
-...(略)...
-</code></pre><p>エラーが変わった！！！KSAとGSAの紐付けはちゃんと行ってるので、もう一度アノテーションをしてみる。</p><pre><code class=language-console data-lang=console>$ gcloud iam service-accounts add-iam-policy-binding \
-&gt; --role roles/iam.workloadIdentityUser \
-&gt; --member &quot;serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]&quot; \
-&gt; cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
-Updated IAM policy for serviceAccount [cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com].
-bindings:
-- members:
-  - serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]
-  role: roles/iam.workloadIdentityUser
-etag: BwXHiYx_cVc=
-version: 1
-
-$ kubectl annotate serviceaccount cloud-sql-ksa iam.gke.io/gcp-service-account=cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
-serviceaccount/cloud-sql-ksa annotated
-</code></pre><p>再度実行</p><pre><code class=language-console data-lang=console>$ skaffold dev
-...(略)...
-Waiting for deployments to stabilize...
- - deployment/appservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
- - deployment/clientservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
- - deployment/appservice is ready. [1/2 deployment(s) still pending]
- - deployment/clientservice is ready.
-Deployments stabilized in 18.977 seconds
-Press Ctrl+C to exit
-Watching for changes...
-[clientservice]  * Serving Flask app 'main' (lazy loading)
-[clientservice]  * Environment: production
-[clientservice]    WARNING: This is a development server. Do not use it in a production deployment.
-[clientservice]    Use a production WSGI server instead.
-[clientservice]  * Debug mode: off
-[clientservice]  * Running on all addresses.
-[clientservice]    WARNING: This is a development server. Do not use it in a production deployment.
-[clientservice]  * Running on http://10.0.0.8:8080/ (Press CTRL+C to quit)
-[clientservice] 10.0.0.1 - - [20/Jul/2021 09:07:45] &quot;GET /healthz HTTP/1.1&quot; 200 -
-[appservice] 10.0.2.1 - - [20/Jul/2021 09:07:46] &quot;GET /healthz HTTP/1.1&quot; 200 -
-[appservice] 10.0.0.11 - - [20/Jul/2021 09:07:55] &quot;GET / HTTP/1.1&quot; 200 -
-[clientservice] [{&quot;shoe_id&quot;: 0, &quot;name&quot;: &quot;lemon-furud-1901&quot;, &quot;last_arrival&quot;: &quot;2011-08-02T01:58:21&quot;, &quot;stock&quot;: 192}, {&quot;shoe_id&quot;: 1, &quot;name&quot;: &quot;orange-deneb-2190&quot;, &quot;last_arrival&quot;: &quot;2020-04-02T10:54:26&quot;, &quot;stock&quot;: 98}, {&quot;shoe_id&quot;: 2, &quot;name&quot;: &quot;banana-gomeisa-2129&quot;, &quot;last_arrival&quot;: &quot;2001-01-10T07:39:43&quot;, &quot;stock&quot;: 99}, {&quot;shoe_id&quot;: 3, &quot;name&quot;: &quot;orange-enif-2083&quot;, &quot;last_arrival&quot;: &quot;1988-02-27T16:12:57&quot;, &quot;stock&quot;: 134}, {&quot;shoe_id&quot;: 4, &quot;name&quot;: &quot;orange-atlas-2091&quot;, &quot;last_arrival&quot;: &quot;1980-02-16T11:49:52&quot;, &quot;stock&quot;: 111}, {&quot;shoe_id&quot;: 5, &quot;name&quot;: &quot;orange-deneb-2118&quot;, &quot;last_arrival&quot;: &quot;2001-08-18T03:09:10&quot;, &quot;stock&quot;: 1}, {&quot;shoe_id&quot;: 6, &quot;name&quot;: &quot;banana-enif-1989&quot;, &quot;last_arrival&quot;: &quot;2007-07-03T07:12:42&quot;, &quot;stock&quot;: 56}, {&quot;shoe_id&quot;: 7, &quot;name&quot;: &quot;grape-hamal-2075&quot;, &quot;last_arrival&quot;: &quot;2015-06-20T00:57:25&quot;, &quot;stock&quot;: 69}, {&quot;shoe_id&quot;: 8, &quot;name&quot;: &quot;mango-atlas-2123&quot;, &quot;last_arrival&quot;: &quot;1985-04-08T16:55:27&quot;, &quot;stock&quot;: 106}, {&quot;shoe_id&quot;: 9, &quot;name&quot;: &quot;mango-caph-2135&quot;, &quot;last_arrival&quot;: &quot;1995-08-14T07:44:49&quot;, &quot;stock&quot;: 135}]
-...(略)...
-</code></pre><p>無事に起動した！！</p><h2 id=まとめ>まとめ</h2><p>はじめからそうなんだけど、GKEからCloud SQLをCloud SQL ProxyとWorkload Identityを使ってつなぐ場合には、公式ドキュメントどおりに設定していけばいい。</p><ul><li><a href=https://cloud.google.com/sql/docs/postgres/connect-kubernetes-engine>Connecting from Google Kubernetes Engine</a></li></ul><p>結局気をつけておくことは</p><ul><li>GKEクラスターをVPCネイティブで作っておく（あとから変えられない）</li><li>Kubernetes Service Accountのapplyを忘れない<ul><li><code>kubectl annotate serviceaccount</code> はエラー無しで動いてしまうので気をつける</li></ul></li><li>Cloud SQL Proxyは結構マシンパワーを使うので強めのインスタンスでオートスケール設定しといたほうが無難</li></ul></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>GKEクラスターをVPCネイティブで作成する</b><nav id=TableOfContents><ul><li><a href=#作業ログ>作業ログ</a></li><li><a href=#まとめ>まとめ</a></li></ul></nav></div><div><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class=twitter-share-button data-show-count=false>Tweet</a><script async src=https://platform.twitter.com/widgets.js></script>
-<iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width=61 height=20 style=border:none;overflow:hidden scrolling=no frameborder=0 allowtransparency=true allow=encrypted-media></iframe>
-<a href=http://b.hatena.ne.jp/entry/ class=hatena-bookmark-button data-hatena-bookmark-layout=basic-label-counter data-hatena-bookmark-lang=ja title=このエントリーをはてなブックマークに追加><img src=https://b.st-hatena.com/images/entry-button/button-only@2x.png alt=このエントリーをはてなブックマークに追加 width=20 height=20 style=border:none></a><script type=text/javascript src=https://b.st-hatena.com/js/bookmark_button.js async></script></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">©Yoshi Yamaguchi 2021- &#183;
-Powered by the
-<a href=https://github.com/qqhann/hugo-primer class=link-gray-dark>Hugo-Primer</a> theme for
-<a href=https://gohugo.io class=link-gray-dark>Hugo</a>.</span></div></div><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script></body></html>
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>GKEクラスターをVPCネイティブで作成する - gist::ymotongpoo</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta property="og:image" content><meta property="og:title" content="GKEクラスターをVPCネイティブで作成する"><meta property="og:description" content><meta property="og:type" content="article"><meta property="og:url" content="http://gist.ymotongpoo.dev/posts/202107/gke-vpc-native-cluster/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2021-07-20T10:00:33+09:00"><meta property="article:modified_time" content="2021-07-20T10:00:33+09:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="GKEクラスターをVPCネイティブで作成する"><meta name=twitter:description content><script src=http://gist.ymotongpoo.devjs/feather.min.js></script>
+<link href=http://gist.ymotongpoo.dev/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=http://gist.ymotongpoo.dev/css/main.ac08a4c9714baa859217f92f051deb58df2938ec352b506df655005dcaf98cc0.css><link id=darkModeStyle rel=stylesheet type=text/css href=http://gist.ymotongpoo.dev/css/dark.726cd11ca6eb7c4f7d48eb420354f814e5c1b94281aaf8fd0511c1319f7f78a4.css media="(prefers-color-scheme: dark)"><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css><script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js></script>
+<script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js onload=renderMathInElement(document.body)></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})})</script></head><body><div class=content><header><div class=main><a href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a></div><nav><a href=/>Home</a>
+<a href=/>Info</a>
+<a href=/posts>Posts</a>
+<a href=/about>About</a></nav></header><main><article><div class=title><h1 class=title>GKEクラスターをVPCネイティブで作成する</h1><div class=meta>Posted on Jul 20, 2021</div></div><section class=body><h2 id=作業ログ>作業ログ</h2><p>作成されたクラスターの確認。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud container clusters list
+</span></span><span style=display:flex><span>NAME          LOCATION    MASTER_VERSION   MASTER_IP      MACHINE_TYPE  NODE_VERSION     NUM_NODES  STATUS
+</span></span><span style=display:flex><span>trace-sample  us-west1-a  1.19.9-gke.1900  34.83.239.113  e2-medium     1.19.9-gke.1900  3          RUNNING
+</span></span></code></pre></div><p>ノードプールの更新。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud container node-pools update default-pool --cluster<span style=color:#81a1c1>=</span>trace-sample --workload-metadata<span style=color:#81a1c1>=</span>GKE_METADATA --zone<span style=color:#81a1c1>=</span>us-west1-a
+</span></span><span style=display:flex><span>Updating node pool default-pool...done.
+</span></span><span style=display:flex><span>Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-a/clusters/trace-sample/nodePools/default-pool].
+</span></span></code></pre></div><p>次はKubernetes Secretの作成。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl create secret generic cloud-sql-secret <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> --from-literal<span style=color:#81a1c1>=</span>username<span style=color:#81a1c1>=</span>postgres <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> --from-literal<span style=color:#81a1c1>=</span>password<span style=color:#81a1c1>=</span>xxxxxxxxxxxxxxxxx <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> --from-literal<span style=color:#81a1c1>=</span>database<span style=color:#81a1c1>=</span>shoe_database
+</span></span><span style=display:flex><span>error: failed to create secret Post &#34;http://localhost:8080/api/v1/namespaces/default/secrets?fieldManager=kubectl-create&#34;: dial tcp [::1]:8080: connect: connection refused
+</span></span></code></pre></div><p>前と同じ名前でクラスター作ったけど <code>kubectl</code> がアクセスできない。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud container clusters get-credentials trace-sample
+</span></span><span style=display:flex><span>Fetching cluster endpoint and auth data.
+</span></span><span style=display:flex><span>kubeconfig entry generated for trace-sample.
+</span></span></code></pre></div><p>KSAを作成</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl create serviceaccount cloud-sql-ksa --namespace default
+</span></span><span style=display:flex><span>serviceaccount/cloud-sql-ksa created
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#4c566a;font-weight:700>$</span> kubectl get serviceaccount --namespace default
+</span></span><span style=display:flex><span>NAME            SECRETS   AGE
+</span></span><span style=display:flex><span>cloud-sql-ksa   1         12s
+</span></span><span style=display:flex><span>default         1         46m
+</span></span></code></pre></div><p>GSAは前に作ってあるので、KSAとGSAの紐付けを行う。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud iam service-accounts add-iam-policy-binding <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> --role roles/iam.workloadIdentityUser <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> --member <span style=color:#a3be8c>&#34;serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]&#34;</span> <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
+</span></span><span style=display:flex><span>Updated IAM policy for serviceAccount [cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com].
+</span></span><span style=display:flex><span>bindings:
+</span></span><span style=display:flex><span>- members:
+</span></span><span style=display:flex><span>  - serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]
+</span></span><span style=display:flex><span>  role: roles/iam.workloadIdentityUser
+</span></span><span style=display:flex><span>etag: BwXHhKG7SRo=
+</span></span><span style=display:flex><span>version: 1
+</span></span></code></pre></div><p>KSAにアノテーションを追加する</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl annotate serviceaccount cloud-sql-ksa iam.gke.io/gcp-service-account<span style=color:#81a1c1>=</span>cloud-sql-ksa@trace-microservices-sample.iam.gserviceaccount.com
+</span></span><span style=display:flex><span>serviceaccount/cloud-sql-ksa annotated
+</span></span></code></pre></div><p>これで実行してみる</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback><span style=display:flex><span>$ skaffold dev
+</span></span><span style=display:flex><span>...(略)...
+</span></span><span style=display:flex><span>Waiting for deployments to stabilize...
+</span></span><span style=display:flex><span> - deployment/appservice: 0/3 nodes are available: 3 Insufficient cpu.
+</span></span><span style=display:flex><span>    - pod/appservice-5bfd679945-lb924: 0/3 nodes are available: 3 Insufficient cpu.
+</span></span><span style=display:flex><span> - deployment/clientservice: creating container clientservice
+</span></span><span style=display:flex><span>    - pod/clientservice-645fcb6957-4rqrk: creating container clientservice
+</span></span><span style=display:flex><span> - deployment/appservice: 0/3 nodes are available: 3 Insufficient cpu.
+</span></span><span style=display:flex><span>    - pod/appservice-5bfd679945-lb924: 0/3 nodes are available: 3 Insufficient cpu.
+</span></span><span style=display:flex><span> - deployment/appservice failed. Error: 0/3 nodes are available: 3 Insufficient cpu..
+</span></span><span style=display:flex><span>Cleaning up...
+</span></span><span style=display:flex><span>...(略)...
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl apply -f test.yaml
+</span></span><span style=display:flex><span>pod/workload-identity-test created
+</span></span><span style=display:flex><span>~/corp/k8stest ☁️ trace-sample
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#4c566a;font-weight:700>$</span> kubectl <span style=color:#81a1c1>exec</span> -it workload-identity-test --namespace default -- /bin/bash
+</span></span><span style=display:flex><span>error: unable to upgrade connection: container not found (&#34;workload-identity-test&#34;)
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#4c566a;font-weight:700>$</span> kubectl get pods
+</span></span><span style=display:flex><span>NAME                     READY   STATUS    RESTARTS   AGE
+</span></span><span style=display:flex><span>workload-identity-test   1/1     Running   0          41s
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#4c566a;font-weight:700>$</span> kubectl <span style=color:#81a1c1>exec</span> -it workload-identity-test --namespace default -- /bin/bash
+</span></span><span style=display:flex><span>root@workload-identity-test:/# gcloud auth list
+</span></span><span style=display:flex><span>                         Credentialed Accounts
+</span></span><span style=display:flex><span>ACTIVE  ACCOUNT
+</span></span><span style=display:flex><span>*       cloud-sql-ksa@trace-microservices-sample.iam.gserviceaccount.com
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span>To set the active account, run:
+</span></span><span style=display:flex><span>    $ gcloud config set account `ACCOUNT`
+</span></span></code></pre></div><p>Kubernetesクラスタに対してサービスアカウントのapplyをしてなかったことに気がつく。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#81a1c1>apiVersion</span><span style=color:#eceff4>:</span> v1
+</span></span><span style=display:flex><span><span style=color:#81a1c1>kind</span><span style=color:#eceff4>:</span> ServiceAccount
+</span></span><span style=display:flex><span><span style=color:#81a1c1>metadata</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> cloud-sql-ksa
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl apply -f service-account.yaml
+</span></span><span style=display:flex><span>serviceaccount/cloud-sql-ksa created
+</span></span></code></pre></div><p>あらためて実行。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> skaffold dev
+</span></span><span style=display:flex><span>...(略)...
+</span></span><span style=display:flex><span> - deployment/appservice: container cloud-sql-proxy terminated with exit code 1
+</span></span><span style=display:flex><span>    - pod/appservice-69d6447d6c-dsmls: container cloud-sql-proxy terminated with exit code 1
+</span></span><span style=display:flex><span>      &gt; [appservice-69d6447d6c-dsmls cloud-sql-proxy] 2021/07/16 07:48:01 current FDs rlimit set to 1048576, wanted limit is 8500. Nothing to do here.
+</span></span><span style=display:flex><span>      &gt; [appservice-69d6447d6c-dsmls cloud-sql-proxy] 2021/07/16 07:48:02 errors parsing config:
+</span></span><span style=display:flex><span>      &gt; [appservice-69d6447d6c-dsmls cloud-sql-proxy]   googleapi: Error 403: The client is not authorized to make this request., notAuthorized
+</span></span><span style=display:flex><span> - deployment/appservice failed. Error: container cloud-sql-proxy terminated with exit code 1.
+</span></span><span style=display:flex><span>...(略)...
+</span></span></code></pre></div><p>エラーが変わった！！！KSAとGSAの紐付けはちゃんと行ってるので、もう一度アノテーションをしてみる。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud iam service-accounts add-iam-policy-binding <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> --role roles/iam.workloadIdentityUser <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> --member <span style=color:#a3be8c>&#34;serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]&#34;</span> <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span><span style=color:#4c566a;font-weight:700>&gt;</span> cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
+</span></span><span style=display:flex><span>Updated IAM policy for serviceAccount [cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com].
+</span></span><span style=display:flex><span>bindings:
+</span></span><span style=display:flex><span>- members:
+</span></span><span style=display:flex><span>  - serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]
+</span></span><span style=display:flex><span>  role: roles/iam.workloadIdentityUser
+</span></span><span style=display:flex><span>etag: BwXHiYx_cVc=
+</span></span><span style=display:flex><span>version: 1
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#4c566a;font-weight:700>$</span> kubectl annotate serviceaccount cloud-sql-ksa iam.gke.io/gcp-service-account<span style=color:#81a1c1>=</span>cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
+</span></span><span style=display:flex><span>serviceaccount/cloud-sql-ksa annotated
+</span></span></code></pre></div><p>再度実行</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> skaffold dev
+</span></span><span style=display:flex><span>...(略)...
+</span></span><span style=display:flex><span>Waiting for deployments to stabilize...
+</span></span><span style=display:flex><span> - deployment/appservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
+</span></span><span style=display:flex><span> - deployment/clientservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
+</span></span><span style=display:flex><span> - deployment/appservice is ready. [1/2 deployment(s) still pending]
+</span></span><span style=display:flex><span> - deployment/clientservice is ready.
+</span></span><span style=display:flex><span>Deployments stabilized in 18.977 seconds
+</span></span><span style=display:flex><span>Press Ctrl+C to exit
+</span></span><span style=display:flex><span>Watching for changes...
+</span></span><span style=display:flex><span>[clientservice]  * Serving Flask app &#39;main&#39; (lazy loading)
+</span></span><span style=display:flex><span>[clientservice]  * Environment: production
+</span></span><span style=display:flex><span>[clientservice]    WARNING: This is a development server. Do not use it in a production deployment.
+</span></span><span style=display:flex><span>[clientservice]    Use a production WSGI server instead.
+</span></span><span style=display:flex><span>[clientservice]  * Debug mode: off
+</span></span><span style=display:flex><span>[clientservice]  * Running on all addresses.
+</span></span><span style=display:flex><span>[clientservice]    WARNING: This is a development server. Do not use it in a production deployment.
+</span></span><span style=display:flex><span>[clientservice]  * Running on http://10.0.0.8:8080/ (Press CTRL+C to quit)
+</span></span><span style=display:flex><span>[clientservice] 10.0.0.1 - - [20/Jul/2021 09:07:45] &#34;GET /healthz HTTP/1.1&#34; 200 -
+</span></span><span style=display:flex><span>[appservice] 10.0.2.1 - - [20/Jul/2021 09:07:46] &#34;GET /healthz HTTP/1.1&#34; 200 -
+</span></span><span style=display:flex><span>[appservice] 10.0.0.11 - - [20/Jul/2021 09:07:55] &#34;GET / HTTP/1.1&#34; 200 -
+</span></span><span style=display:flex><span>[clientservice] [{&#34;shoe_id&#34;: 0, &#34;name&#34;: &#34;lemon-furud-1901&#34;, &#34;last_arrival&#34;: &#34;2011-08-02T01:58:21&#34;, &#34;stock&#34;: 192}, {&#34;shoe_id&#34;: 1, &#34;name&#34;: &#34;orange-deneb-2190&#34;, &#34;last_arrival&#34;: &#34;2020-04-02T10:54:26&#34;, &#34;stock&#34;: 98}, {&#34;shoe_id&#34;: 2, &#34;name&#34;: &#34;banana-gomeisa-2129&#34;, &#34;last_arrival&#34;: &#34;2001-01-10T07:39:43&#34;, &#34;stock&#34;: 99}, {&#34;shoe_id&#34;: 3, &#34;name&#34;: &#34;orange-enif-2083&#34;, &#34;last_arrival&#34;: &#34;1988-02-27T16:12:57&#34;, &#34;stock&#34;: 134}, {&#34;shoe_id&#34;: 4, &#34;name&#34;: &#34;orange-atlas-2091&#34;, &#34;last_arrival&#34;: &#34;1980-02-16T11:49:52&#34;, &#34;stock&#34;: 111}, {&#34;shoe_id&#34;: 5, &#34;name&#34;: &#34;orange-deneb-2118&#34;, &#34;last_arrival&#34;: &#34;2001-08-18T03:09:10&#34;, &#34;stock&#34;: 1}, {&#34;shoe_id&#34;: 6, &#34;name&#34;: &#34;banana-enif-1989&#34;, &#34;last_arrival&#34;: &#34;2007-07-03T07:12:42&#34;, &#34;stock&#34;: 56}, {&#34;shoe_id&#34;: 7, &#34;name&#34;: &#34;grape-hamal-2075&#34;, &#34;last_arrival&#34;: &#34;2015-06-20T00:57:25&#34;, &#34;stock&#34;: 69}, {&#34;shoe_id&#34;: 8, &#34;name&#34;: &#34;mango-atlas-2123&#34;, &#34;last_arrival&#34;: &#34;1985-04-08T16:55:27&#34;, &#34;stock&#34;: 106}, {&#34;shoe_id&#34;: 9, &#34;name&#34;: &#34;mango-caph-2135&#34;, &#34;last_arrival&#34;: &#34;1995-08-14T07:44:49&#34;, &#34;stock&#34;: 135}]
+</span></span><span style=display:flex><span>...(略)...
+</span></span></code></pre></div><p>無事に起動した！！</p><h2 id=まとめ>まとめ</h2><p>はじめからそうなんだけど、GKEからCloud SQLをCloud SQL ProxyとWorkload Identityを使ってつなぐ場合には、公式ドキュメントどおりに設定していけばいい。</p><ul><li><a href=https://cloud.google.com/sql/docs/postgres/connect-kubernetes-engine>Connecting from Google Kubernetes Engine</a></li></ul><p>結局気をつけておくことは</p><ul><li>GKEクラスターをVPCネイティブで作っておく（あとから変えられない）</li><li>Kubernetes Service Accountのapplyを忘れない<ul><li><code>kubectl annotate serviceaccount</code> はエラー無しで動いてしまうので気をつける</li></ul></li><li>Cloud SQL Proxyは結構マシンパワーを使うので強めのインスタンスでオートスケール設定しといたほうが無難</li></ul></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/google-kubernetes-engine>google-kubernetes-engine</a></li><li><a href=/tags/vpc>vpc</a></li><li><a href=/tags/kubernetes>kubernetes</a></li><li><a href=/tags/network>network</a></li></ul></nav></div></article></main><footer><div style=display:flex><a class=soc href=https://github.com/ymotongpoo rel=me title=GitHub><i data-feather=github></i></a>
+<a class=border></a><a class=soc href=https://twitter.com/ymotongpoo rel=me title=Twitter><i data-feather=twitter></i></a>
+<a class=border></a></div><div class=footer-info>2023 &amp;copy;Yoshi Yamaguchi | <a href=https://github.com/athul/archie>Archie Theme</a> | Built with <a href=https://gohugo.io>Hugo</a></div></footer><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-6420772-10","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script>
+<script>feather.replace()</script></div></body></html>

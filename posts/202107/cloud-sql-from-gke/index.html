@@ -1,137 +1,149 @@
-<!doctype html><html><head><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga('create','UA-6420772-10','auto'),ga('send','pageview'))</script><script async src=https://www.google-analytics.com/analytics.js></script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>GKEからCloud SQLにアクセスする &ndash; gist::ymotongpoo</title><meta name=description property="og:description" content="KubernetesとGoogle Cloudの設定を行う Kubernetesクラスタを更新する Workload Identityを有効にしていなかったらまず|A brain dumps by Yoshi Yamaguchi."><meta name=apple-mobile-web-app-title content="gist::ymotongpoo"><link rel=icon href=http://gist.ymotongpoo.devfavicon-64.png><link rel=apple-touch-icon href=http://gist.ymotongpoo.devapple-touch-icon.png><link rel=mask-icon size=any href=http://gist.ymotongpoo.devpinned-icon.svg><meta name=twitter:card content="summary"><meta name=twitter:site content="@ymotongpoo"><meta name=twitter:creator content="@ymotongpoo"><meta name=twitter:title content="GKEからCloud SQLにアクセスする | gist::ymotongpoo"><meta name=twitter:description content="KubernetesとGoogle Cloudの設定を行う Kubernetesクラスタを更新する Workload Identityを有効にしていなかったらまず|A brain dumps by Yoshi Yamaguchi."><meta name=twitter:image content="http://gist.ymotongpoo.devtwitter-card.png"><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css><link rel=stylesheet href=/assets/custom_style.css></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Info</span></a>
-<a class=UnderlineNav-item href=/posts/><span>Posts</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div class=Subhead><div class=Subhead-heading><div class="h1 mt-3 mb-1">GKEからCloud SQLにアクセスする</div></div><div class=Subhead-description><a href=/tags/cloud-sql class=muted-link><span class="Label Label--gray">cloud-sql</span></a>
-<a href=/tags/kubernetes class=muted-link><span class="Label Label--gray">kubernetes</span></a>
-<a href=/tags/google-kubernetes-engine class=muted-link><span class="Label Label--gray">google-kubernetes-engine</span></a>
-<a href=/tags/iam class=muted-link><span class="Label Label--gray">iam</span></a><div class=float-md-right><span title="Lastmod: 2021-07-16. Published at: 2021-07-16.">Published: 2021-07-16</span></div></div></div><article><section class="pb-6 mb-3 border-bottom"><h2 id=kubernetesとgoogle-cloudの設定を行う>KubernetesとGoogle Cloudの設定を行う</h2><h3 id=kubernetesクラスタを更新する>Kubernetesクラスタを更新する</h3><p>Workload Identityを有効にしていなかったらまずその設定を行う。</p><pre><code class=language-console data-lang=console>gcloud container clusters update &lt;cluster-name&gt; \
---workload-pool=&lt;project_id&gt;.svc.id.goog
-</code></pre><p>自分の場合の例</p><pre><code class=language-console data-lang=console>gcloud container clusters update trace-sample --workload-pool=trace-microservices-sample.svc.id.goog
-Updating trace-sample...done.
-Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-b/clusters/trace-sample].
-To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-west1-b/trace-sample?project=trace-microservices-sample
-</code></pre><h3 id=kubernetesのノードプールを変更する>Kubernetesのノードプールを変更する</h3><p>新しいノードプールを作るか既存のノードプールを <code>GKE_METADATA</code> を使うように変更する。自分は既存のノードプールを変更した。</p><pre><code class=language-console data-lang=console>gcloud container node-pools update &lt;nodepool_name&gt; \
-  --cluster=&lt;cluster_name&gt; \
-  --workload-metadata=GKE_METADATA
-</code></pre><p>自分の場合はこういう感じ</p><pre><code class=language-console data-lang=console>$ gcloud container node-pools update default-pool \
---cluster=trace-sample \
---workload-metadata=GKE_METADATA
-Updating node pool default-pool... Updating default-pool, done with 0 out of 2 nodes (0.0%): 1 being process
-ed...⠹
-Updating node pool default-pool... Updating default-pool, done with 1 out of 2 nodes (50.0%): 1 being proces
-sed, 1 succeeded...done.
-Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-b/clusters/trace-sample/nodePools/default-pool].
-</code></pre><h3 id=kubernetes-secretの作成>Kubernetes Secretの作成</h3><pre><code class=language-console data-lang=console>$ kubectl create secret generic cloud-sql-secret \
---from-literal=username=&lt;Cloud SQL username&gt; \
---from-literal=password=&lt;Cloud SQL password&gt; \
---from-literal=database=&lt;Cloud SQL database&gt;
-</code></pre><p>自分の場合の例</p><pre><code class=language-console data-lang=console>$ kubectl create secret generic cloud-sql-secret \
---from-literal=username=postgres \
---from-literal=password=XXXXXXXXXXXXXXXX \
---from-literal=database=xxxxxxxxxxxxxxxx
-secret/cloud-sql-secret created
-</code></pre><p>これを作るとGKEのConfigurationsでSecretが作成されたことが確認できる。</p><figure><img src=/image/202107/20210716-1.png></figure><h3 id=kubernetes-service-account-ksa-の作成>Kubernetes Service Account (KSA) の作成</h3><pre><code class=language-console data-lang=console>$ kubectl create namespace &lt;namespace_name&gt;
-$ kubectl create serviceaccount &lt;ksa_name&gt; --namespace &lt;namespace_name&gt;
-</code></pre><p>自分の場合は横着してdefaultネームスペースを使ってしまった</p><pre><code class=language-console data-lang=console>$ kubectl create serviceaccount cloud-sql-ksa --namespace default
-serviceaccount/cloud-sql-ksa created
-
-$ kubectl get serviceaccount --namespace default
-NAME            SECRETS   AGE
-cloud-sql-ksa   1         21s
-default         1         10d
-</code></pre><h3 id=google-cloud-service-account-gsa-の作成>Google Cloud Service Account (GSA) の作成</h3><p>まず新規Google Cloud Service Accountを作成する。</p><pre><code class=language-console data-lang=console>$ gcloud iam service-accounts create &lt;gsa_name&gt;
-</code></pre><p>つづいて作ったGSAに対してCloud SQLのアクセス権限を付与する</p><pre><code class=language-console data-lang=console>$ gcloud projects add-iam-policy-binding &lt;project_id&gt; \
---member serviceAccount:&lt;gsa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com \
---role roles/cloudsql.client
-</code></pre><p>自分の例</p><pre><code class=language-console data-lang=console>$ gcloud iam service-accounts create cloud-sql-gsa
-Created service account [cloud-sql-gsa].
-
-$ gcloud projects add-iam-policy-binding trace-microservices-sample \
---member serviceAccount:cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com \
---role roles/cloudsql.client
-Updated IAM policy for project [trace-microservices-sample].
-bindings:
-- members:
-  ...(略)...
-etag: BwXHNz0zmqE=
-version: 1
-</code></pre><h3 id=gsaとksaの紐付け>GSAとKSAの紐付け</h3><pre><code class=language-console data-lang=console>gcloud iam service-accounts add-iam-policy-binding \
---role roles/iam.workloadIdentityUser \
---member &quot;serviceAccount:&lt;project_id&gt;.svc.id.goog[&lt;kubernetes_namespace&gt;/&lt;ksa_name&gt;]&quot; \
-&lt;gsa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com
-</code></pre><p>自分の場合の例</p><pre><code class=language-console data-lang=console>$ gcloud iam service-accounts add-iam-policy-binding \
---role roles/iam.workloadIdentityUser \
---member &quot;serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]&quot; \
-cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
-Updated IAM policy for serviceAccount [cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com].
-bindings:
-- members:
-  - serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]
-  role: roles/iam.workloadIdentityUser
-etag: BwXHN6fhkC0=
-version: 1
-</code></pre><h3 id=ksaにアノテーションを追加する>KSAにアノテーションを追加する</h3><pre><code class=language-console data-lang=console>kubectl annotate serviceaccount \
-   &lt;ksa_name&gt; \
-   iam.gke.io/gcp-service-account=&lt;ksa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com
-</code></pre><p>自分の場合</p><pre><code class=language-console data-lang=console>kubectl annotate serviceaccount \
-   cloud-sql-ksa \
-   iam.gke.io/gcp-service-account=cloud-sql-ksa@trace-microservices-sample.iam.gserviceaccount.com
-
-serviceaccount/cloud-sql-ksa annotated
-</code></pre><h2 id=トラブル>トラブル</h2><h3 id=cloud-sql-proxy-が-403で起動しない>Cloud SQL Proxy が 403で起動しない</h3><p>KSAとGSAの紐付けを行っていて、GSAにちゃんとCloud SQLのクライアントのロールを与えているのに接続できなかった。</p><pre><code class=language-console data-lang=console>...(略)...
-Waiting for deployments to stabilize...
- - deployment/appservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
- - deployment/clientservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
- - deployment/appservice: container cloud-sql-proxy terminated with exit code 1
-    - pod/appservice-64ddff97b9-bdq7w: container cloud-sql-proxy terminated with exit code 1
-      &gt; [appservice-64ddff97b9-bdq7w cloud-sql-proxy] 2021/07/16 07:41:10 current FDs rlimit set to 1048576, wanted limit is 8500. Nothing to do here.
-      &gt; [appservice-64ddff97b9-bdq7w cloud-sql-proxy] 2021/07/16 07:41:13 errors parsing config:
-      &gt; [appservice-64ddff97b9-bdq7w cloud-sql-proxy]   googleapi: Error 403: The client is not authorized to make this request., notAuthorized
- - deployment/appservice failed. Error: container cloud-sql-proxy terminated with exit code 1.
-...(略)...
-</code></pre><p>よく確認するとKubernetesのマニフェストでサービスアカウント名をちゃんと指定していなかった。</p><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml><span class=nt>apiVersion</span><span class=p>:</span><span class=w> </span><span class=l>apps/v1</span><span class=w>
-</span><span class=w></span><span class=nt>kind</span><span class=p>:</span><span class=w> </span><span class=l>Deployment</span><span class=w>
-</span><span class=w></span><span class=nt>metadata</span><span class=p>:</span><span class=w>
-</span><span class=w>  </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>appservice</span><span class=w>
-</span><span class=w></span><span class=nt>spec</span><span class=p>:</span><span class=w>
-</span><span class=w>  </span><span class=nt>selector</span><span class=p>:</span><span class=w>
-</span><span class=w>    </span><span class=nt>matchLabels</span><span class=p>:</span><span class=w>
-</span><span class=w>      </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>appservice</span><span class=w>
-</span><span class=w>  </span><span class=nt>template</span><span class=p>:</span><span class=w>
-</span><span class=w>    </span><span class=nt>metadata</span><span class=p>:</span><span class=w>
-</span><span class=w>      </span><span class=nt>labels</span><span class=p>:</span><span class=w>
-</span><span class=w>        </span><span class=nt>app</span><span class=p>:</span><span class=w> </span><span class=l>appservice</span><span class=w>
-</span><span class=w>    </span><span class=nt>spec</span><span class=p>:</span><span class=w>
-</span><span class=w>      </span><span class=nt>serviceAccountName</span><span class=p>:</span><span class=w> </span><span class=l>cloud-sql-ksa</span><span class=w> </span><span class=c># &lt;-- ここにちゃんとKSAを指定</span><span class=w>
-</span><span class=w>      </span><span class=nt>terminationGracePeriodSeconds</span><span class=p>:</span><span class=w> </span><span class=m>5</span><span class=w>
-</span><span class=w>      </span><span class=nt>containers</span><span class=p>:</span><span class=w>
-</span><span class=w>      </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>appservice</span><span class=w>
-</span><span class=w>        </span><span class=nt>image</span><span class=p>:</span><span class=w> </span><span class=l>appservice</span><span class=w>
-</span><span class=w>        </span><span class=nt>ports</span><span class=p>:</span><span class=w>
-</span><span class=w>        </span>- <span class=nt>containerPort</span><span class=p>:</span><span class=w> </span><span class=m>5000</span><span class=w>
-</span><span class=w>        </span><span class=nt>env</span><span class=p>:</span><span class=w>
-</span><span class=w>        </span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>DB_USER</span><span class=w>
-</span><span class=w>          </span><span class=nt>valueFrom</span><span class=p>:</span><span class=w>
-</span><span class=w>            </span><span class=nt>secretKeyRef</span><span class=p>:</span><span class=w>
-</span><span class=w>              </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>cloud-sql-secret</span><span class=w>
-</span><span class=w>              </span><span class=nt>key</span><span class=p>:</span><span class=w> </span><span class=l>username</span><span class=w>
-</span><span class=w>              </span><span class=l>...(略)...</span><span class=w>
-</span></code></pre></div><h3 id=gceメタデータが取得できない>GCEメタデータが取得できない</h3><p>上の設定を行ったら今度はまた別の問題が発生。</p><pre><code class=language-console data-lang=console>Waiting for deployments to stabilize...
- - deployment/appservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
- - deployment/clientservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
- - deployment/appservice: container cloud-sql-proxy terminated with exit code 1
-    - pod/appservice-77748675fc-dwhvk: container cloud-sql-proxy terminated with exit code 1
-      &gt; [appservice-77748675fc-dwhvk cloud-sql-proxy] 2021/07/16 10:38:38 current FDs rlimit set to 1048576, wanted limit is 8500. Nothing to do here.
-      &gt; [appservice-77748675fc-dwhvk cloud-sql-proxy] 2021/07/16 10:38:42 errors parsing config:
-      &gt; [appservice-77748675fc-dwhvk cloud-sql-proxy]   Get &quot;https://sqladmin.googleapis.com/sql/v1beta4/projects/trace-microservices-sample/instances/us-west1~shoe-hat-inventory?alt=json&amp;prettyPrint=false&quot;: metadata: GCE metadata &quot;instance/service-accounts/default/token?scopes=https%!A(MISSING)%!F(MISSING)%!F(MISSING)www.googleapis.com%!F(MISSING)auth%!F(MISSING)sqlservice.admin&quot; not defined
- - deployment/appservice failed. Error: container cloud-sql-proxy terminated with exit code 1.
-</code></pre><p>これはGKEのアドオンとしてConfig Connectorというものを追加してあげないといけないらしい。</p><ul><li><a href=https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall>https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall</a></li></ul><pre><code class=language-console data-lang=console>gcloud container clusters update trace-sample --update-addons ConfigConnector=ENABLED
-Updating trace-sample...done.
-Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-b/clusters/trace-sample].
-To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-west1-b/trace-sample?project=trace-microservices-sample
-</code></pre><p>それでも同様のエラーが発生するのでこれを試してみた。</p><ul><li><a href="https://cloud.google.com/sql/docs/postgres/admin-api?hl=ja">https://cloud.google.com/sql/docs/postgres/admin-api?hl=ja</a></li></ul><pre><code class=language-console data-lang=console>$ gcloud services enable sqladmin.googleapis.com
-</code></pre><p>しかしこれでもだめ、よくよくドキュメントを見てみるとGKEからCloud SQLに接続する場合にはVPCネイティブじゃないとだめらしい。しかしこのクラスタはなっていない。</p><figure><img src=/image/202107/20210716-3.png></figure><p>これは<a href="https://cloud.google.com/kubernetes-engine/docs/how-to/routes-based-cluster?hl=en#restrictions">あとから変更できない</a>のでクラスターを再構築するしか無い。</p><h3 id=リソースが足りない>リソースが足りない</h3><p>問題がConfig Connectorだと思ってデプロイしてみたらいろんなサービスが追加で入れられてリソースが足りなくなった。</p><figure><img src=/image/202107/20210716-2.png></figure><p>最初クラスターを作り直そうかと思ったけど、せっかくなのでオートスケーリングでやってみる。</p><pre><code>gcloud container clusters update trace-sample --enable-autoscaling --max-nodes 10
-</code></pre><p>長くなったのでクラスターを再構築するところから始めます。</p><h2 id=参考>参考</h2><ul><li><a href=https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity>https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity</a></li><li><a href=https://cloud.google.com/sql/docs/sqlserver/connect-kubernetes-engine>https://cloud.google.com/sql/docs/sqlserver/connect-kubernetes-engine</a></li><li><a href=https://y-ohgi.blog/entry/2020/08/19/GKE%E3%81%AEWorkloadIdentity%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E3%83%A2%E3%83%80%E3%83%B3%E3%81%AA%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E5%88%B6%E5%BE%A1%E3%82%92%E5%AE%9F%E7%8F%BE%E3%81%99%E3%82%8B>https://y-ohgi.blog/entry/2020/08/19/GKE%E3%81%AEWorkloadIdentity%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E3%83%A2%E3%83%80%E3%83%B3%E3%81%AA%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E5%88%B6%E5%BE%A1%E3%82%92%E5%AE%9F%E7%8F%BE%E3%81%99%E3%82%8B</a></li><li><a href=https://stackoverflow.com/questions/65948131/unable-to-bind-google-service-account-to-kubernetes-service-account>https://stackoverflow.com/questions/65948131/unable-to-bind-google-service-account-to-kubernetes-service-account</a></li><li><a href=https://engineer.recruit-lifestyle.co.jp/techblog/2019-12-23-workload-identity/>https://engineer.recruit-lifestyle.co.jp/techblog/2019-12-23-workload-identity/</a></li><li><a href=https://cloud.google.com/config-connector/docs/troubleshooting#metadata_not_defined>https://cloud.google.com/config-connector/docs/troubleshooting#metadata_not_defined</a></li><li><a href=https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall>https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall</a></li></ul></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>GKEからCloud SQLにアクセスする</b><nav id=TableOfContents><ul><li><a href=#kubernetesとgoogle-cloudの設定を行う>KubernetesとGoogle Cloudの設定を行う</a><ul><li><a href=#kubernetesクラスタを更新する>Kubernetesクラスタを更新する</a></li><li><a href=#kubernetesのノードプールを変更する>Kubernetesのノードプールを変更する</a></li><li><a href=#kubernetes-secretの作成>Kubernetes Secretの作成</a></li><li><a href=#kubernetes-service-account-ksa-の作成>Kubernetes Service Account (KSA) の作成</a></li><li><a href=#google-cloud-service-account-gsa-の作成>Google Cloud Service Account (GSA) の作成</a></li><li><a href=#gsaとksaの紐付け>GSAとKSAの紐付け</a></li><li><a href=#ksaにアノテーションを追加する>KSAにアノテーションを追加する</a></li></ul></li><li><a href=#トラブル>トラブル</a><ul><li><a href=#cloud-sql-proxy-が-403で起動しない>Cloud SQL Proxy が 403で起動しない</a></li><li><a href=#gceメタデータが取得できない>GCEメタデータが取得できない</a></li><li><a href=#リソースが足りない>リソースが足りない</a></li></ul></li><li><a href=#参考>参考</a></li></ul></nav></div><div><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class=twitter-share-button data-show-count=false>Tweet</a><script async src=https://platform.twitter.com/widgets.js></script>
-<iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width=61 height=20 style=border:none;overflow:hidden scrolling=no frameborder=0 allowtransparency=true allow=encrypted-media></iframe>
-<a href=http://b.hatena.ne.jp/entry/ class=hatena-bookmark-button data-hatena-bookmark-layout=basic-label-counter data-hatena-bookmark-lang=ja title=このエントリーをはてなブックマークに追加><img src=https://b.st-hatena.com/images/entry-button/button-only@2x.png alt=このエントリーをはてなブックマークに追加 width=20 height=20 style=border:none></a><script type=text/javascript src=https://b.st-hatena.com/js/bookmark_button.js async></script></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">©Yoshi Yamaguchi 2021- &#183;
-Powered by the
-<a href=https://github.com/qqhann/hugo-primer class=link-gray-dark>Hugo-Primer</a> theme for
-<a href=https://gohugo.io class=link-gray-dark>Hugo</a>.</span></div></div><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script></body></html>
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>GKEからCloud SQLにアクセスする - gist::ymotongpoo</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta property="og:image" content><meta property="og:title" content="GKEからCloud SQLにアクセスする"><meta property="og:description" content><meta property="og:type" content="article"><meta property="og:url" content="http://gist.ymotongpoo.dev/posts/202107/cloud-sql-from-gke/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2021-07-16T15:21:36+09:00"><meta property="article:modified_time" content="2021-07-16T15:21:36+09:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="GKEからCloud SQLにアクセスする"><meta name=twitter:description content><script src=http://gist.ymotongpoo.devjs/feather.min.js></script>
+<link href=http://gist.ymotongpoo.dev/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=http://gist.ymotongpoo.dev/css/main.ac08a4c9714baa859217f92f051deb58df2938ec352b506df655005dcaf98cc0.css><link id=darkModeStyle rel=stylesheet type=text/css href=http://gist.ymotongpoo.dev/css/dark.726cd11ca6eb7c4f7d48eb420354f814e5c1b94281aaf8fd0511c1319f7f78a4.css media="(prefers-color-scheme: dark)"><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css><script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js></script>
+<script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js onload=renderMathInElement(document.body)></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})})</script></head><body><div class=content><header><div class=main><a href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a></div><nav><a href=/>Home</a>
+<a href=/>Info</a>
+<a href=/posts>Posts</a>
+<a href=/about>About</a></nav></header><main><article><div class=title><h1 class=title>GKEからCloud SQLにアクセスする</h1><div class=meta>Posted on Jul 16, 2021</div></div><section class=body><h2 id=kubernetesとgoogle-cloudの設定を行う>KubernetesとGoogle Cloudの設定を行う</h2><h3 id=kubernetesクラスタを更新する>Kubernetesクラスタを更新する</h3><p>Workload Identityを有効にしていなかったらまずその設定を行う。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>gcloud container clusters update &lt;cluster-name&gt; \
+</span></span><span style=display:flex><span>--workload-pool=&lt;project_id&gt;.svc.id.goog
+</span></span></code></pre></div><p>自分の場合の例</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>gcloud container clusters update trace-sample --workload-pool=trace-microservices-sample.svc.id.goog
+</span></span><span style=display:flex><span>Updating trace-sample...done.
+</span></span><span style=display:flex><span>Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-b/clusters/trace-sample].
+</span></span><span style=display:flex><span>To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-west1-b/trace-sample?project=trace-microservices-sample
+</span></span></code></pre></div><h3 id=kubernetesのノードプールを変更する>Kubernetesのノードプールを変更する</h3><p>新しいノードプールを作るか既存のノードプールを <code>GKE_METADATA</code> を使うように変更する。自分は既存のノードプールを変更した。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>gcloud container node-pools update &lt;nodepool_name&gt; \
+</span></span><span style=display:flex><span>  --cluster=&lt;cluster_name&gt; \
+</span></span><span style=display:flex><span>  --workload-metadata=GKE_METADATA
+</span></span></code></pre></div><p>自分の場合はこういう感じ</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud container node-pools update default-pool <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>--cluster=trace-sample \
+</span></span><span style=display:flex><span>--workload-metadata=GKE_METADATA
+</span></span><span style=display:flex><span>Updating node pool default-pool... Updating default-pool, done with 0 out of 2 nodes (0.0%): 1 being process
+</span></span><span style=display:flex><span>ed...⠹
+</span></span><span style=display:flex><span>Updating node pool default-pool... Updating default-pool, done with 1 out of 2 nodes (50.0%): 1 being proces
+</span></span><span style=display:flex><span>sed, 1 succeeded...done.
+</span></span><span style=display:flex><span>Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-b/clusters/trace-sample/nodePools/default-pool].
+</span></span></code></pre></div><h3 id=kubernetes-secretの作成>Kubernetes Secretの作成</h3><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl create secret generic cloud-sql-secret <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>--from-literal=username=&lt;Cloud SQL username&gt; \
+</span></span><span style=display:flex><span>--from-literal=password=&lt;Cloud SQL password&gt; \
+</span></span><span style=display:flex><span>--from-literal=database=&lt;Cloud SQL database&gt;
+</span></span></code></pre></div><p>自分の場合の例</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl create secret generic cloud-sql-secret <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>--from-literal=username=postgres \
+</span></span><span style=display:flex><span>--from-literal=password=XXXXXXXXXXXXXXXX \
+</span></span><span style=display:flex><span>--from-literal=database=xxxxxxxxxxxxxxxx
+</span></span><span style=display:flex><span>secret/cloud-sql-secret created
+</span></span></code></pre></div><p>これを作るとGKEのConfigurationsでSecretが作成されたことが確認できる。</p><figure><img src=/image/202107/20210716-1.png></figure><h3 id=kubernetes-service-account-ksa-の作成>Kubernetes Service Account (KSA) の作成</h3><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl create namespace &lt;namespace_name&gt;
+</span></span><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl create serviceaccount &lt;ksa_name&gt; --namespace &lt;namespace_name&gt;
+</span></span></code></pre></div><p>自分の場合は横着してdefaultネームスペースを使ってしまった</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> kubectl create serviceaccount cloud-sql-ksa --namespace default
+</span></span><span style=display:flex><span>serviceaccount/cloud-sql-ksa created
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#4c566a;font-weight:700>$</span> kubectl get serviceaccount --namespace default
+</span></span><span style=display:flex><span>NAME            SECRETS   AGE
+</span></span><span style=display:flex><span>cloud-sql-ksa   1         21s
+</span></span><span style=display:flex><span>default         1         10d
+</span></span></code></pre></div><h3 id=google-cloud-service-account-gsa-の作成>Google Cloud Service Account (GSA) の作成</h3><p>まず新規Google Cloud Service Accountを作成する。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud iam service-accounts create &lt;gsa_name&gt;
+</span></span></code></pre></div><p>つづいて作ったGSAに対してCloud SQLのアクセス権限を付与する</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud projects add-iam-policy-binding &lt;project_id&gt; <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>--member serviceAccount:&lt;gsa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com \
+</span></span><span style=display:flex><span>--role roles/cloudsql.client
+</span></span></code></pre></div><p>自分の例</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud iam service-accounts create cloud-sql-gsa
+</span></span><span style=display:flex><span>Created service account [cloud-sql-gsa].
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#4c566a;font-weight:700>$</span> gcloud projects add-iam-policy-binding trace-microservices-sample <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>--member serviceAccount:cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com \
+</span></span><span style=display:flex><span>--role roles/cloudsql.client
+</span></span><span style=display:flex><span>Updated IAM policy for project [trace-microservices-sample].
+</span></span><span style=display:flex><span>bindings:
+</span></span><span style=display:flex><span>- members:
+</span></span><span style=display:flex><span>  ...(略)...
+</span></span><span style=display:flex><span>etag: BwXHNz0zmqE=
+</span></span><span style=display:flex><span>version: 1
+</span></span></code></pre></div><h3 id=gsaとksaの紐付け>GSAとKSAの紐付け</h3><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>gcloud iam service-accounts add-iam-policy-binding \
+</span></span><span style=display:flex><span>--role roles/iam.workloadIdentityUser \
+</span></span><span style=display:flex><span>--member &#34;serviceAccount:&lt;project_id&gt;.svc.id.goog[&lt;kubernetes_namespace&gt;/&lt;ksa_name&gt;]&#34; \
+</span></span><span style=display:flex><span>&lt;gsa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com
+</span></span></code></pre></div><p>自分の場合の例</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud iam service-accounts add-iam-policy-binding <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>--role roles/iam.workloadIdentityUser \
+</span></span><span style=display:flex><span>--member &#34;serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]&#34; \
+</span></span><span style=display:flex><span>cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com
+</span></span><span style=display:flex><span>Updated IAM policy for serviceAccount [cloud-sql-gsa@trace-microservices-sample.iam.gserviceaccount.com].
+</span></span><span style=display:flex><span>bindings:
+</span></span><span style=display:flex><span>- members:
+</span></span><span style=display:flex><span>  - serviceAccount:trace-microservices-sample.svc.id.goog[default/cloud-sql-ksa]
+</span></span><span style=display:flex><span>  role: roles/iam.workloadIdentityUser
+</span></span><span style=display:flex><span>etag: BwXHN6fhkC0=
+</span></span><span style=display:flex><span>version: 1
+</span></span></code></pre></div><h3 id=ksaにアノテーションを追加する>KSAにアノテーションを追加する</h3><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>kubectl annotate serviceaccount \
+</span></span><span style=display:flex><span>   &lt;ksa_name&gt; \
+</span></span><span style=display:flex><span>   iam.gke.io/gcp-service-account=&lt;ksa_name&gt;@&lt;project_id&gt;.iam.gserviceaccount.com
+</span></span></code></pre></div><p>自分の場合</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>kubectl annotate serviceaccount \
+</span></span><span style=display:flex><span>   cloud-sql-ksa \
+</span></span><span style=display:flex><span>   iam.gke.io/gcp-service-account=cloud-sql-ksa@trace-microservices-sample.iam.gserviceaccount.com
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span>serviceaccount/cloud-sql-ksa annotated
+</span></span></code></pre></div><h2 id=トラブル>トラブル</h2><h3 id=cloud-sql-proxy-が-403で起動しない>Cloud SQL Proxy が 403で起動しない</h3><p>KSAとGSAの紐付けを行っていて、GSAにちゃんとCloud SQLのクライアントのロールを与えているのに接続できなかった。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>...(略)...
+</span></span><span style=display:flex><span>Waiting for deployments to stabilize...
+</span></span><span style=display:flex><span> - deployment/appservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
+</span></span><span style=display:flex><span> - deployment/clientservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
+</span></span><span style=display:flex><span> - deployment/appservice: container cloud-sql-proxy terminated with exit code 1
+</span></span><span style=display:flex><span>    - pod/appservice-64ddff97b9-bdq7w: container cloud-sql-proxy terminated with exit code 1
+</span></span><span style=display:flex><span>      &gt; [appservice-64ddff97b9-bdq7w cloud-sql-proxy] 2021/07/16 07:41:10 current FDs rlimit set to 1048576, wanted limit is 8500. Nothing to do here.
+</span></span><span style=display:flex><span>      &gt; [appservice-64ddff97b9-bdq7w cloud-sql-proxy] 2021/07/16 07:41:13 errors parsing config:
+</span></span><span style=display:flex><span>      &gt; [appservice-64ddff97b9-bdq7w cloud-sql-proxy]   googleapi: Error 403: The client is not authorized to make this request., notAuthorized
+</span></span><span style=display:flex><span> - deployment/appservice failed. Error: container cloud-sql-proxy terminated with exit code 1.
+</span></span><span style=display:flex><span>...(略)...
+</span></span></code></pre></div><p>よく確認するとKubernetesのマニフェストでサービスアカウント名をちゃんと指定していなかった。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#81a1c1>apiVersion</span><span style=color:#eceff4>:</span> apps/v1
+</span></span><span style=display:flex><span><span style=color:#81a1c1>kind</span><span style=color:#eceff4>:</span> Deployment
+</span></span><span style=display:flex><span><span style=color:#81a1c1>metadata</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> appservice
+</span></span><span style=display:flex><span><span style=color:#81a1c1>spec</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>selector</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1>matchLabels</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>      <span style=color:#81a1c1>app</span><span style=color:#eceff4>:</span> appservice
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>template</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1>metadata</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>      <span style=color:#81a1c1>labels</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>        <span style=color:#81a1c1>app</span><span style=color:#eceff4>:</span> appservice
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1>spec</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>      <span style=color:#81a1c1>serviceAccountName</span><span style=color:#eceff4>:</span> cloud-sql-ksa <span style=color:#616e87;font-style:italic># &lt;-- ここにちゃんとKSAを指定</span>
+</span></span><span style=display:flex><span>      <span style=color:#81a1c1>terminationGracePeriodSeconds</span><span style=color:#eceff4>:</span> <span style=color:#b48ead>5</span>
+</span></span><span style=display:flex><span>      <span style=color:#81a1c1>containers</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>      - <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> appservice
+</span></span><span style=display:flex><span>        <span style=color:#81a1c1>image</span><span style=color:#eceff4>:</span> appservice
+</span></span><span style=display:flex><span>        <span style=color:#81a1c1>ports</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>        - <span style=color:#81a1c1>containerPort</span><span style=color:#eceff4>:</span> <span style=color:#b48ead>5000</span>
+</span></span><span style=display:flex><span>        <span style=color:#81a1c1>env</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>        - <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> DB_USER
+</span></span><span style=display:flex><span>          <span style=color:#81a1c1>valueFrom</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>            <span style=color:#81a1c1>secretKeyRef</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>              <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> cloud-sql-secret
+</span></span><span style=display:flex><span>              <span style=color:#81a1c1>key</span><span style=color:#eceff4>:</span> username
+</span></span><span style=display:flex><span>              ...(略)...
+</span></span></code></pre></div><h3 id=gceメタデータが取得できない>GCEメタデータが取得できない</h3><p>上の設定を行ったら今度はまた別の問題が発生。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>Waiting for deployments to stabilize...
+</span></span><span style=display:flex><span> - deployment/appservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
+</span></span><span style=display:flex><span> - deployment/clientservice: waiting for rollout to finish: 0 of 1 updated replicas are available...
+</span></span><span style=display:flex><span> - deployment/appservice: container cloud-sql-proxy terminated with exit code 1
+</span></span><span style=display:flex><span>    - pod/appservice-77748675fc-dwhvk: container cloud-sql-proxy terminated with exit code 1
+</span></span><span style=display:flex><span>      &gt; [appservice-77748675fc-dwhvk cloud-sql-proxy] 2021/07/16 10:38:38 current FDs rlimit set to 1048576, wanted limit is 8500. Nothing to do here.
+</span></span><span style=display:flex><span>      &gt; [appservice-77748675fc-dwhvk cloud-sql-proxy] 2021/07/16 10:38:42 errors parsing config:
+</span></span><span style=display:flex><span>      &gt; [appservice-77748675fc-dwhvk cloud-sql-proxy]   Get &#34;https://sqladmin.googleapis.com/sql/v1beta4/projects/trace-microservices-sample/instances/us-west1~shoe-hat-inventory?alt=json&amp;prettyPrint=false&#34;: metadata: GCE metadata &#34;instance/service-accounts/default/token?scopes=https%!A(MISSING)%!F(MISSING)%!F(MISSING)www.googleapis.com%!F(MISSING)auth%!F(MISSING)sqlservice.admin&#34; not defined
+</span></span><span style=display:flex><span> - deployment/appservice failed. Error: container cloud-sql-proxy terminated with exit code 1.
+</span></span></code></pre></div><p>これはGKEのアドオンとしてConfig Connectorというものを追加してあげないといけないらしい。</p><ul><li><a href=https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall>https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall</a></li></ul><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>gcloud container clusters update trace-sample --update-addons ConfigConnector=ENABLED
+</span></span><span style=display:flex><span>Updating trace-sample...done.
+</span></span><span style=display:flex><span>Updated [https://container.googleapis.com/v1/projects/trace-microservices-sample/zones/us-west1-b/clusters/trace-sample].
+</span></span><span style=display:flex><span>To inspect the contents of your cluster, go to: https://console.cloud.google.com/kubernetes/workload_/gcloud/us-west1-b/trace-sample?project=trace-microservices-sample
+</span></span></code></pre></div><p>それでも同様のエラーが発生するのでこれを試してみた。</p><ul><li><a href="https://cloud.google.com/sql/docs/postgres/admin-api?hl=ja">https://cloud.google.com/sql/docs/postgres/admin-api?hl=ja</a></li></ul><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span><span style=color:#4c566a;font-weight:700>$</span> gcloud services <span style=color:#81a1c1>enable</span> sqladmin.googleapis.com
+</span></span></code></pre></div><p>しかしこれでもだめ、よくよくドキュメントを見てみるとGKEからCloud SQLに接続する場合にはVPCネイティブじゃないとだめらしい。しかしこのクラスタはなっていない。</p><figure><img src=/image/202107/20210716-3.png></figure><p>これは<a href="https://cloud.google.com/kubernetes-engine/docs/how-to/routes-based-cluster?hl=en#restrictions">あとから変更できない</a>のでクラスターを再構築するしか無い。</p><h3 id=リソースが足りない>リソースが足りない</h3><p>問題がConfig Connectorだと思ってデプロイしてみたらいろんなサービスが追加で入れられてリソースが足りなくなった。</p><figure><img src=/image/202107/20210716-2.png></figure><p>最初クラスターを作り直そうかと思ったけど、せっかくなのでオートスケーリングでやってみる。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-fallback data-lang=fallback><span style=display:flex><span>gcloud container clusters update trace-sample --enable-autoscaling --max-nodes 10
+</span></span></code></pre></div><p>長くなったのでクラスターを再構築するところから始めます。</p><h2 id=参考>参考</h2><ul><li><a href=https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity>https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity</a></li><li><a href=https://cloud.google.com/sql/docs/sqlserver/connect-kubernetes-engine>https://cloud.google.com/sql/docs/sqlserver/connect-kubernetes-engine</a></li><li><a href=https://y-ohgi.blog/entry/2020/08/19/GKE%E3%81%AEWorkloadIdentity%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E3%83%A2%E3%83%80%E3%83%B3%E3%81%AA%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E5%88%B6%E5%BE%A1%E3%82%92%E5%AE%9F%E7%8F%BE%E3%81%99%E3%82%8B>https://y-ohgi.blog/entry/2020/08/19/GKE%E3%81%AEWorkloadIdentity%E3%82%92%E4%BD%BF%E7%94%A8%E3%81%97%E3%81%A6%E3%83%A2%E3%83%80%E3%83%B3%E3%81%AA%E3%82%A2%E3%82%AF%E3%82%BB%E3%82%B9%E5%88%B6%E5%BE%A1%E3%82%92%E5%AE%9F%E7%8F%BE%E3%81%99%E3%82%8B</a></li><li><a href=https://stackoverflow.com/questions/65948131/unable-to-bind-google-service-account-to-kubernetes-service-account>https://stackoverflow.com/questions/65948131/unable-to-bind-google-service-account-to-kubernetes-service-account</a></li><li><a href=https://engineer.recruit-lifestyle.co.jp/techblog/2019-12-23-workload-identity/>https://engineer.recruit-lifestyle.co.jp/techblog/2019-12-23-workload-identity/</a></li><li><a href=https://cloud.google.com/config-connector/docs/troubleshooting#metadata_not_defined>https://cloud.google.com/config-connector/docs/troubleshooting#metadata_not_defined</a></li><li><a href=https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall>https://cloud.google.com/config-connector/docs/how-to/install-upgrade-uninstall</a></li></ul></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/cloud-sql>cloud-sql</a></li><li><a href=/tags/kubernetes>kubernetes</a></li><li><a href=/tags/google-kubernetes-engine>google-kubernetes-engine</a></li><li><a href=/tags/iam>iam</a></li></ul></nav></div></article></main><footer><div style=display:flex><a class=soc href=https://github.com/ymotongpoo rel=me title=GitHub><i data-feather=github></i></a>
+<a class=border></a><a class=soc href=https://twitter.com/ymotongpoo rel=me title=Twitter><i data-feather=twitter></i></a>
+<a class=border></a></div><div class=footer-info>2023 &amp;copy;Yoshi Yamaguchi | <a href=https://github.com/athul/archie>Archie Theme</a> | Built with <a href=https://gohugo.io>Hugo</a></div></footer><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-6420772-10","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script>
+<script>feather.replace()</script></div></body></html>

@@ -1,149 +1,160 @@
-<!doctype html><html><head><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga('create','UA-6420772-10','auto'),ga('send','pageview'))</script><script async src=https://www.google-analytics.com/analytics.js></script><meta charset=utf-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Terraform+AnsibleでGoogle Compute Engineインスタンスを作る &ndash; gist::ymotongpoo</title><meta name=description property="og:description" content="Google Cloud Buildを使ってGoogle Compute Engine上に開発環境を作ろうと思ったんで諸々メモ。 TerraformでGoogle Secret Managerを|A brain dumps by Yoshi Yamaguchi."><meta name=apple-mobile-web-app-title content="gist::ymotongpoo"><link rel=icon href=http://gist.ymotongpoo.devfavicon-64.png><link rel=apple-touch-icon href=http://gist.ymotongpoo.devapple-touch-icon.png><link rel=mask-icon size=any href=http://gist.ymotongpoo.devpinned-icon.svg><meta name=twitter:card content="summary"><meta name=twitter:site content="@ymotongpoo"><meta name=twitter:creator content="@ymotongpoo"><meta name=twitter:title content="Terraform+AnsibleでGoogle Compute Engineインスタンスを作る | gist::ymotongpoo"><meta name=twitter:description content="Google Cloud Buildを使ってGoogle Compute Engine上に開発環境を作ろうと思ったんで諸々メモ。 TerraformでGoogle Secret Managerを|A brain dumps by Yoshi Yamaguchi."><meta name=twitter:image content="http://gist.ymotongpoo.devtwitter-card.png"><link rel=stylesheet href=/assets/syntax.css><link rel=stylesheet href=/assets/primer-build.css><link rel=stylesheet href=/assets/style.css><link rel=stylesheet href=/assets/custom_style.css></head><body class=bg-gray><div id=holy class="container-lg bg-white h-100"><div id=header class="px-1 bg-white"><nav class="UnderlineNav UnderlineNav--right px-2"><a class="UnderlineNav-actions muted-link h2" href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a><div class=UnderlineNav-body><a class=UnderlineNav-item href=/><span>Info</span></a>
-<a class=UnderlineNav-item href=/posts/><span>Posts</span></a></div></nav></div><div role=main id=main class="holy-main markdown-body px-4 bg-white"><div class=Subhead><div class=Subhead-heading><div class="h1 mt-3 mb-1">Terraform+AnsibleでGoogle Compute Engineインスタンスを作る</div></div><div class=Subhead-description><a href=/tags/terraform class=muted-link><span class="Label Label--gray">terraform</span></a>
-<a href=/tags/ansible class=muted-link><span class="Label Label--gray">ansible</span></a>
-<a href=/tags/secret-manager class=muted-link><span class="Label Label--gray">secret-manager</span></a>
-<a href=/tags/compute-engine class=muted-link><span class="Label Label--gray">compute-engine</span></a>
-<a href=/tags/cloud-build class=muted-link><span class="Label Label--gray">cloud-build</span></a><div class=float-md-right><span title="Lastmod: 2021-07-12. Published at: 2021-07-12.">Published: 2021-07-12</span></div></div></div><article><section class="pb-6 mb-3 border-bottom"><p>Google Cloud Buildを使ってGoogle Compute Engine上に開発環境を作ろうと思ったんで諸々メモ。</p><h2 id=terraformでgoogle-secret-managerを扱う>TerraformでGoogle Secret Managerを扱う</h2><p>Sethが書いたブログ記事に簡潔にまとまっている。さすが元Hashicorp、さすがセキュリティ担当。</p><ul><li><a href=https://www.sethvargo.com/accessing-google-secret-manager-secrets-from-terraform/>https://www.sethvargo.com/accessing-google-secret-manager-secrets-from-terraform/</a></li></ul><p>まずこういう具合にデータを用意する。</p><div class=highlight><pre class=chroma><code class=language-hcl data-lang=hcl><span class=k>data</span> <span class=s2>&#34;google_secret_manager_secret_version&#34; &#34;terraform_ssh_private_key&#34;</span> {
-<span class=n>    provider</span> <span class=o>=</span> <span class=k>google</span>
-<span class=n>    secret</span> <span class=o>=</span> <span class=s2>&#34;terraform-ssh-private-key&#34;</span>
-<span class=n>    version</span> <span class=o>=</span> <span class=s2>&#34;1&#34;</span>
-}
-
-<span class=k>data</span> <span class=s2>&#34;google_secret_manager_secret_version&#34; &#34;terraform_ssh_pub_key&#34;</span> {
-<span class=n>    provider</span> <span class=o>=</span> <span class=k>google</span>
-<span class=n>    secret</span> <span class=o>=</span> <span class=s2>&#34;terraform-ssh-pub-key&#34;</span>
-<span class=n>    version</span> <span class=o>=</span> <span class=s2>&#34;1&#34;</span>
-}
-</code></pre></div><p>そして、Google Compute Engineのインスタンス作成において次のように設定する。</p><div class=highlight><pre class=chroma><code class=language-hcl data-lang=hcl><span class=k>resource</span> <span class=s2>&#34;google_compute_instance&#34; &#34;debian10&#34;</span> {
-<span class=n>    name</span> <span class=o>=</span> <span class=s2>&#34;debian10&#34;</span>
-<span class=n>    machine_type</span> <span class=o>=</span> <span class=s2>&#34;e2-standard-4&#34;</span>
-
-    <span class=p>...(</span><span class=k>略</span><span class=p>)...</span>
-
-<span class=n>    metadata</span> <span class=o>=</span> {
-<span class=n>        block-project-ssh-keys</span> <span class=o>=</span> <span class=s2>&#34;true&#34;</span>
-<span class=n>        ssh-keys</span> <span class=o>=</span> <span class=s2>&#34;${var.gce_ssh_user}:${data.google_secret_manager_secret_version.terraform_ssh_pub_key.secret_data}&#34;</span>
-    }
-
-    <span class=k>provisioner</span> <span class=s2>&#34;remote-exec&#34;</span> {
-<span class=n>        inline</span> <span class=o>=</span> <span class=p>[</span><span class=s2>&#34;echo hello&#34;</span><span class=p>]</span>
-        <span class=k>connection</span> {
-<span class=n>            type</span> <span class=o>=</span> <span class=s2>&#34;ssh&#34;</span>
-<span class=n>            host</span> <span class=o>=</span> <span class=k>self</span><span class=p>.</span><span class=k>network_interface</span><span class=p>[</span><span class=m>0</span><span class=p>].</span><span class=k>access_config</span><span class=p>[</span><span class=m>0</span><span class=p>].</span><span class=k>nat_ip</span>
-<span class=n>            user</span> <span class=o>=</span> <span class=k>var</span><span class=p>.</span><span class=k>gce_ssh_user</span>
-<span class=n>            private_key</span> <span class=o>=</span> <span class=k>data</span><span class=p>.</span><span class=k>google_secret_manager_secret_version</span><span class=p>.</span><span class=k>terraform_ssh_private_key</span><span class=p>.</span><span class=k>secret_data</span>
-        }
-    }
-
-    <span class=k>provisioner</span> <span class=s2>&#34;local-exec&#34;</span> {
-<span class=n>        working_dir</span> <span class=o>=</span> <span class=s2>&#34;./ansible/&#34;</span>
-<span class=n>        command</span> <span class=o>=</span> <span class=err>&lt;&lt;</span><span class=k>EOL</span>
-<span class=n>        ANSIBLE_HOST_KEY_CHEKING</span><span class=o>=</span><span class=k>False</span> <span class=k>ansible</span><span class=err>-</span><span class=k>playbook</span> <span class=err>-</span><span class=k>i</span> <span class=k>hosts</span><span class=err>/</span><span class=k>inventory</span><span class=p>.</span><span class=k>gcp</span><span class=p>.</span><span class=k>yaml</span> <span class=k>debian</span><span class=p>.</span><span class=k>yaml</span>
-        <span class=k>EOL</span>
-    }
-}
-</code></pre></div><p>ポイントはシークレットの値にアクセスする際に <code>data.google_secret_manager_secret_version.&lt;resource_name>.secret_data</code> とすること。最後の値へのアクセスが <code>secret_data</code> になっているのが注意。</p><h2 id=cloud-buildで呼んだterraform内でansibleを呼べるようにする>Cloud Buildで呼んだTerraform内でAnsibleを呼べるようにする</h2><p>Cloud Buildの設定ではTerraformのbuilderに <code>hashicorp/terraform:&lt;version></code> を使っているが、これを使うと <code>local-exec</code> でAnsibleが呼び出せない。（イメージ内にAnsibleが入ってないので当たり前）</p><p>仕方ないので自分でCloud Builderを作成する。最後は <code>ENTRYPOINT</code> にしないと起動できないので注意。</p><div class=highlight><pre class=chroma><code class=language-dockerfile data-lang=dockerfile><span class=k>FROM</span><span class=s> python:3.9-slim-buster as fetcher</span><span class=err>
-</span><span class=err></span><span class=k>ENV</span> <span class=nv>TERRAFORM_VER</span><span class=o>=</span><span class=s2>&#34;1.0.2&#34;</span><span class=err>
-</span><span class=err></span><span class=k>ENV</span> <span class=nv>ANSIBLE_VER</span><span class=o>=</span><span class=s2>&#34;2.11.0&#34;</span><span class=err>
-</span><span class=err></span><span class=k>RUN</span> apt-get update <span class=o>&amp;&amp;</span> apt-get install -y wget unzip<span class=err>
-</span><span class=err></span><span class=k>WORKDIR</span><span class=s> /download</span><span class=err>
-</span><span class=err></span><span class=k>RUN</span> wget -q -O terraform.zip <span class=s2>&#34;https://releases.hashicorp.com/terraform/1.0.2/terraform_</span><span class=si>${</span><span class=nv>TERRAFORM_VER</span><span class=si>}</span><span class=s2>_linux_amd64.zip&#34;</span> <span class=se>\
-</span><span class=se></span>    <span class=o>&amp;&amp;</span> unzip terraform.zip <span class=se>\
-</span><span class=se></span>    <span class=o>&amp;&amp;</span> rm terraform.zip<span class=err>
-</span><span class=err>
-</span><span class=err></span><span class=k>RUN</span> wget https://bootstrap.pypa.io/get-pip.py -O get-pip.py <span class=se>\
-</span><span class=se></span>    <span class=o>&amp;&amp;</span> python3 get-pip.py <span class=o>&amp;&amp;</span> rm get-pip.py<span class=err>
-</span><span class=err>
-</span><span class=err></span><span class=k>COPY</span> requirements.txt requirements.txt<span class=err>
-</span><span class=err></span><span class=k>RUN</span> pip install -r requirements.txt<span class=err>
-</span><span class=err></span><span class=k>RUN</span> ansible-galaxy collection install google.cloud community.general<span class=err>
-</span><span class=err></span><span class=k>RUN</span> ansible-galaxy install kewlfft.aur fubarhouse.golang<span class=err>
-</span><span class=err>
-</span><span class=err></span><span class=k>FROM</span><span class=s> python:3.9-slim-buster</span><span class=err>
-</span><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>fetcher /download/terraform /usr/local/bin/terraform<span class=err>
-</span><span class=err></span><span class=k>RUN</span> chmod +x /usr/local/bin/terraform<span class=err>
-</span><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>fetcher /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages<span class=err>
-</span><span class=err></span><span class=k>COPY</span> --from<span class=o>=</span>fetcher /usr/local/bin/ansible /usr/local/bin/ansible<span class=err>
-</span><span class=err></span><span class=k>COPY</span> terraform.bash /usr/local/bin/terraform.bash<span class=err>
-</span><span class=err></span><span class=k>RUN</span> chmod +x /usr/local/bin/terraform.bash<span class=err>
-</span><span class=err></span><span class=k>ENTRYPOINT</span> <span class=p>[</span><span class=s2>&#34;/usr/local/bin/terraform.bash&#34;</span><span class=p>]</span><span class=err>
-</span></code></pre></div><p>また、<code>ENTRYPOINT</code> 用のコマンドがCloud Buildから引数を受け取れるように、このようにラッパーのシェルスクリプトを用意しておいて、そちらを指定するのが一般的。</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=nb>echo</span> <span class=s2>&#34;Running: terraform </span><span class=nv>$@</span><span class=s2>&#34;</span>
-/usr/local/bin/terraform <span class=s2>&#34;</span><span class=nv>$@</span><span class=s2>&#34;</span>
-</code></pre></div><h2 id=ansibleのhosts内で使うサービスアカウント情報を渡す部分>Ansibleのhosts内で使うサービスアカウント情報を渡す部分</h2><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml><span class=nn>---</span><span class=w>
-</span><span class=w></span><span class=c># This inventory is using gcp_compute plugin. Install the plugin in advance of the execution.</span><span class=w>
-</span><span class=w></span><span class=c># $ ansible-galaxy collection install google.cloud</span><span class=w>
-</span><span class=w></span><span class=c># https://docs.ansible.com/ansible/latest/collections/google/cloud/gcp_compute_inventory.html</span><span class=w>
-</span><span class=w></span><span class=nt>plugin</span><span class=p>:</span><span class=w> </span><span class=l>gcp_compute</span><span class=w>
-</span><span class=w></span><span class=nt>zones</span><span class=p>:</span><span class=w> </span><span class=c># populate inventory with instances in these regions</span><span class=w>
-</span><span class=w>  </span>- <span class=l>asia-northeast1-b</span><span class=w>
-</span><span class=w>  </span>- <span class=l>asia-northeast1-a</span><span class=w>
-</span><span class=w>  </span>- <span class=l>asia-northeast2-b</span><span class=w>
-</span><span class=w>  </span>- <span class=l>asia-northeast2-a</span><span class=w>
-</span><span class=w>  </span>- <span class=l>asia-east1-b</span><span class=w>
-</span><span class=w></span><span class=nt>projects</span><span class=p>:</span><span class=w> </span><span class=l>development-215403</span><span class=w>
-</span><span class=w></span><span class=nt>service_account_file</span><span class=p>:</span><span class=w> </span><span class=l>/workspace/ansible-service-account.json</span><span class=w>
-</span><span class=w></span><span class=nt>auth_kind</span><span class=p>:</span><span class=w> </span><span class=l>serviceaccount</span><span class=w>
-</span><span class=w></span><span class=nt>scopes</span><span class=p>:</span><span class=w>
-</span><span class=w> </span>- <span class=s1>&#39;https://www.googleapis.com/auth/compute&#39;</span><span class=w>
-</span><span class=w></span><span class=nt>hostnames</span><span class=p>:</span><span class=w>
-</span><span class=w>  </span><span class=c># List host by name instead of the default public ip</span><span class=w>
-</span><span class=w>  </span>- <span class=s1>&#39;name&#39;</span><span class=w>
-</span><span class=w></span><span class=nt>compose</span><span class=p>:</span><span class=w>
-</span><span class=w>  </span><span class=c># Set an inventory parameter to use the Public IP address to connect to the host</span><span class=w>
-</span><span class=w>  </span><span class=c># For Private ip use &#34;networkInterfaces[0].networkIP&#34;</span><span class=w>
-</span><span class=w>  </span><span class=nt>ansible_host</span><span class=p>:</span><span class=w> </span><span class=l>networkInterfaces[0].accessConfigs[0].natIP</span><span class=w>
-</span></code></pre></div><p><code>service_account_file</code> の情報を渡さないと <code>ansible-playbook</code> が実行が失敗するわけだけど、これは <code>google_compute_instance</code> の <code>local-exec</code> からだと変数として値を渡せるものではない。</p><p>仕方がないのでCloud Buildの特徴を使って <code>/workspace</code> 以下にサービスアカウントファイルを持ってくる手順を <code>cloudbuild.yaml</code> に記述する。</p><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;gcr.io/cloud-builders/gcloud-slim&#39;</span><span class=w>
-</span><span class=w>  </span><span class=nt>entrypoint</span><span class=p>:</span><span class=w> </span><span class=s1>&#39;bash&#39;</span><span class=w>
-</span><span class=w>  </span><span class=nt>args</span><span class=p>:</span><span class=w> </span><span class=p>[</span><span class=s1>&#39;shellscript/fetch_service_account_file.bash&#39;</span><span class=p>]</span><span class=w>
-</span></code></pre></div><p>この中で呼んでるシェルスクリプトはこんな感じ。</p><div class=highlight><pre class=chroma><code class=language-bash data-lang=bash><span class=cp>#!/bin/bash
-</span><span class=cp></span><span class=nb>set</span> -ex
-
-<span class=nv>IAM_ACCOUNT</span><span class=o>=</span><span class=s2>&#34;cloud-build-terraform-ansible@development-215403.iam.gserviceaccount.com&#34;</span>
-
-<span class=nv>keys</span><span class=o>=</span><span class=k>$(</span> gcloud iam service-accounts keys list <span class=se>\
-</span><span class=se></span>  --iam-account<span class=o>=</span><span class=si>${</span><span class=nv>IAM_ACCOUNT</span><span class=si>}</span> <span class=se>\
-</span><span class=se></span>  --filter<span class=o>=</span><span class=s2>&#34;key_type=USER_MANAGED&#34;</span> <span class=se>\
-</span><span class=se></span>  --format<span class=o>=</span><span class=s2>&#34;value(name)&#34;</span> <span class=k>)</span>
-
-<span class=k>if</span> <span class=o>[</span> -n <span class=s2>&#34;</span><span class=nv>$keys</span><span class=s2>&#34;</span> <span class=o>]</span><span class=p>;</span> <span class=k>then</span>
-    <span class=k>for</span> key in <span class=nv>$keys</span><span class=p>;</span> <span class=k>do</span>
-        gcloud iam service-accounts keys delete <span class=nv>$key</span> <span class=se>\
-</span><span class=se></span>          --iam-account<span class=o>=</span><span class=si>${</span><span class=nv>IAM_ACCOUNT</span><span class=si>}</span>
-    <span class=k>done</span>
-<span class=k>fi</span>
-
-gcloud iam service-accounts keys create ansible-service-account.json <span class=se>\
-</span><span class=se></span>  --iam-account<span class=o>=</span><span class=si>${</span><span class=nv>IAM_ACCOUNT</span><span class=si>}</span>
-</code></pre></div><h2 id=ansibleが-authentication-failed-となってapt関連を動かせない>Ansibleが &ldquo;Authentication failed&rdquo; となってapt関連を動かせない</h2><p>これでめちゃくちゃはまった。</p><pre><code class=language-console data-lang=console>Error running command 'ANSIBLE_HOST_KEY_CHEKING=False ansible-playbook -i hosts/inventory.gcp.yaml debian.yaml': exit status 4. Output:
-PLAY [debian]
-******************************************************************
-
-TASK [Gathering Facts]
-*********************************************************
-[WARNING]: Platform linux on host debian is using the discovered Python interpreter at /usr/bin/python3.7, but future installation of another Python interpreter could change the meaning of that path. See https://docs.ansible.com/ansible/2.11/reference_appendices/interpreter_discovery.html for more information.
-ok: [debian]
-
-TASK [debian : Change default shell]
-*******************************************
-changed: [debian]
-
-TASK [debian : Install preconditional apt packages]
-****************************
-failed: [debian] (item={'name': 'apt-transport-https', 'state': 'latest'}) =&gt; {&quot;ansible_loop_var&quot;: &quot;item&quot;, &quot;item&quot;: {&quot;name&quot;: &quot;apt-transport-https&quot;, &quot;state&quot;: &quot;latest&quot;}, &quot;msg&quot;: &quot;Failed to uthenticate: Authentication failed.&quot;, &quot;unreachable&quot;: true}
-</code></pre><p>実際はAnsibleは全然関係なくて、taskの順番で実際に変更後に使うshellをインストールする前にそのshellに変更してしまったから、shellに接続できなくて死んでたという話。エラーメッセージだけみてSSH周りがおかしいのだと思って混乱してた。再現する簡単な設定。</p><div class=highlight><pre class=chroma><code class=language-yaml data-lang=yaml>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>Change default shell</span><span class=w>
-</span><span class=w>  </span><span class=nt>ansible.builtin.user</span><span class=p>:</span><span class=w>
-</span><span class=w>    </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>demo</span><span class=w>
-</span><span class=w>    </span><span class=nt>shell</span><span class=p>:</span><span class=w> </span><span class=l>/usr/bin/zsh</span><span class=w>
-</span><span class=w>  </span><span class=nt>become</span><span class=p>:</span><span class=w> </span><span class=kc>yes</span><span class=w>
-</span><span class=w>
-</span><span class=w></span>- <span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>Update package</span><span class=w>
-</span><span class=w>  </span><span class=nt>ansible.builtin.apt</span><span class=p>:</span><span class=w>
-</span><span class=w>    </span><span class=nt>name</span><span class=p>:</span><span class=w> </span><span class=l>zsh</span><span class=w>
-</span><span class=w>    </span><span class=nt>state</span><span class=p>:</span><span class=w> </span><span class=l>latest</span><span class=w>
-</span><span class=w>  </span><span class=nt>become</span><span class=p>:</span><span class=w> </span><span class=kc>yes</span><span class=w>
-</span></code></pre></div></section><section></section></article></div><div id=side class="pr-1 bg-white"><aside class=pr-3><div id=toc class="Box Box--blue mb-3"><b>Terraform+AnsibleでGoogle Compute Engineインスタンスを作る</b><nav id=TableOfContents><ul><li><a href=#terraformでgoogle-secret-managerを扱う>TerraformでGoogle Secret Managerを扱う</a></li><li><a href=#cloud-buildで呼んだterraform内でansibleを呼べるようにする>Cloud Buildで呼んだTerraform内でAnsibleを呼べるようにする</a></li><li><a href=#ansibleのhosts内で使うサービスアカウント情報を渡す部分>Ansibleのhosts内で使うサービスアカウント情報を渡す部分</a></li><li><a href=#ansibleが-authentication-failed-となってapt関連を動かせない>Ansibleが &ldquo;Authentication failed&rdquo; となってapt関連を動かせない</a></li></ul></nav></div><div><a href="https://twitter.com/share?ref_src=twsrc%5Etfw" class=twitter-share-button data-show-count=false>Tweet</a><script async src=https://platform.twitter.com/widgets.js></script>
-<iframe src="https://www.facebook.com/plugins/share_button.php?href=https%3A%2F%2Fdevelopers.facebook.com%2Fdocs%2Fplugins%2F&layout=button&size=small&mobile_iframe=true&width=61&height=20&appId" width=61 height=20 style=border:none;overflow:hidden scrolling=no frameborder=0 allowtransparency=true allow=encrypted-media></iframe>
-<a href=http://b.hatena.ne.jp/entry/ class=hatena-bookmark-button data-hatena-bookmark-layout=basic-label-counter data-hatena-bookmark-lang=ja title=このエントリーをはてなブックマークに追加><img src=https://b.st-hatena.com/images/entry-button/button-only@2x.png alt=このエントリーをはてなブックマークに追加 width=20 height=20 style=border:none></a><script type=text/javascript src=https://b.st-hatena.com/js/bookmark_button.js async></script></div></aside></div><div id=footer class="pt-2 pb-3 bg-white text-center"><span class="text-small text-gray">©Yoshi Yamaguchi 2021- &#183;
-Powered by the
-<a href=https://github.com/qqhann/hugo-primer class=link-gray-dark>Hugo-Primer</a> theme for
-<a href=https://gohugo.io class=link-gray-dark>Hugo</a>.</span></div></div><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>MathJax.Hub.Config({ tex2jax: { inlineMath: [['$','$'], ['\\(','\\)']] } });</script></body></html>
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>Terraform+AnsibleでGoogle Compute Engineインスタンスを作る - gist::ymotongpoo</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content><meta property="og:image" content><meta property="og:title" content="Terraform+AnsibleでGoogle Compute Engineインスタンスを作る"><meta property="og:description" content><meta property="og:type" content="article"><meta property="og:url" content="http://gist.ymotongpoo.dev/posts/202107/terraform-ansible-google-cloud/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2021-07-12T11:08:33+09:00"><meta property="article:modified_time" content="2021-07-12T11:08:33+09:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="Terraform+AnsibleでGoogle Compute Engineインスタンスを作る"><meta name=twitter:description content><script src=http://gist.ymotongpoo.devjs/feather.min.js></script>
+<link href=http://gist.ymotongpoo.dev/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=http://gist.ymotongpoo.dev/css/main.ac08a4c9714baa859217f92f051deb58df2938ec352b506df655005dcaf98cc0.css><link id=darkModeStyle rel=stylesheet type=text/css href=http://gist.ymotongpoo.dev/css/dark.726cd11ca6eb7c4f7d48eb420354f814e5c1b94281aaf8fd0511c1319f7f78a4.css media="(prefers-color-scheme: dark)"><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css><script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js></script>
+<script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js onload=renderMathInElement(document.body)></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})})</script></head><body><div class=content><header><div class=main><a href=http://gist.ymotongpoo.dev>gist::ymotongpoo</a></div><nav><a href=/>Home</a>
+<a href=/>Info</a>
+<a href=/posts>Posts</a>
+<a href=/about>About</a></nav></header><main><article><div class=title><h1 class=title>Terraform+AnsibleでGoogle Compute Engineインスタンスを作る</h1><div class=meta>Posted on Jul 12, 2021</div></div><section class=body><p>Google Cloud Buildを使ってGoogle Compute Engine上に開発環境を作ろうと思ったんで諸々メモ。</p><h2 id=terraformでgoogle-secret-managerを扱う>TerraformでGoogle Secret Managerを扱う</h2><p>Sethが書いたブログ記事に簡潔にまとまっている。さすが元Hashicorp、さすがセキュリティ担当。</p><ul><li><a href=https://www.sethvargo.com/accessing-google-secret-manager-secrets-from-terraform/>https://www.sethvargo.com/accessing-google-secret-manager-secrets-from-terraform/</a></li></ul><p>まずこういう具合にデータを用意する。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=display:flex><span><span style=color:#81a1c1;font-weight:700>data</span> <span style=color:#a3be8c>&#34;google_secret_manager_secret_version&#34; &#34;terraform_ssh_private_key&#34;</span> {
+</span></span><span style=display:flex><span>    provider <span style=color:#81a1c1>=</span> <span style=color:#81a1c1;font-weight:700>google</span>
+</span></span><span style=display:flex><span>    secret <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;terraform-ssh-private-key&#34;</span>
+</span></span><span style=display:flex><span>    version <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;1&#34;</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#81a1c1;font-weight:700>data</span> <span style=color:#a3be8c>&#34;google_secret_manager_secret_version&#34; &#34;terraform_ssh_pub_key&#34;</span> {
+</span></span><span style=display:flex><span>    provider <span style=color:#81a1c1>=</span> <span style=color:#81a1c1;font-weight:700>google</span>
+</span></span><span style=display:flex><span>    secret <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;terraform-ssh-pub-key&#34;</span>
+</span></span><span style=display:flex><span>    version <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;1&#34;</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>そして、Google Compute Engineのインスタンス作成において次のように設定する。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-hcl data-lang=hcl><span style=display:flex><span><span style=color:#81a1c1;font-weight:700>resource</span> <span style=color:#a3be8c>&#34;google_compute_instance&#34; &#34;debian10&#34;</span> {
+</span></span><span style=display:flex><span>    name <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;debian10&#34;</span>
+</span></span><span style=display:flex><span>    machine_type <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;e2-standard-4&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#eceff4>...(</span><span style=color:#bf616a>略</span><span style=color:#eceff4>)...</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    metadata <span style=color:#81a1c1>=</span> {
+</span></span><span style=display:flex><span>        block-project-ssh-keys <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;true&#34;</span>
+</span></span><span style=display:flex><span>        ssh-keys <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;${var.gce_ssh_user}:${data.google_secret_manager_secret_version.terraform_ssh_pub_key.secret_data}&#34;</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>provisioner</span> <span style=color:#a3be8c>&#34;remote-exec&#34;</span> {
+</span></span><span style=display:flex><span>        inline <span style=color:#81a1c1>=</span> <span style=color:#eceff4>[</span><span style=color:#a3be8c>&#34;echo hello&#34;</span><span style=color:#eceff4>]</span>
+</span></span><span style=display:flex><span>        <span style=color:#81a1c1;font-weight:700>connection</span> {
+</span></span><span style=display:flex><span>            type <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;ssh&#34;</span>
+</span></span><span style=display:flex><span>            host <span style=color:#81a1c1>=</span> <span style=color:#81a1c1;font-weight:700>self</span><span style=color:#eceff4>.</span><span style=color:#81a1c1;font-weight:700>network_interface</span><span style=color:#eceff4>[</span><span style=color:#b48ead>0</span><span style=color:#eceff4>].</span><span style=color:#81a1c1;font-weight:700>access_config</span><span style=color:#eceff4>[</span><span style=color:#b48ead>0</span><span style=color:#eceff4>].</span><span style=color:#81a1c1;font-weight:700>nat_ip</span>
+</span></span><span style=display:flex><span>            user <span style=color:#81a1c1>=</span> <span style=color:#81a1c1;font-weight:700>var</span><span style=color:#eceff4>.</span><span style=color:#81a1c1;font-weight:700>gce_ssh_user</span>
+</span></span><span style=display:flex><span>            private_key <span style=color:#81a1c1>=</span> <span style=color:#81a1c1;font-weight:700>data</span><span style=color:#eceff4>.</span><span style=color:#81a1c1;font-weight:700>google_secret_manager_secret_version</span><span style=color:#eceff4>.</span><span style=color:#81a1c1;font-weight:700>terraform_ssh_private_key</span><span style=color:#eceff4>.</span><span style=color:#81a1c1;font-weight:700>secret_data</span>
+</span></span><span style=display:flex><span>        }
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>provisioner</span> <span style=color:#a3be8c>&#34;local-exec&#34;</span> {
+</span></span><span style=display:flex><span>        working_dir <span style=color:#81a1c1>=</span> <span style=color:#a3be8c>&#34;./ansible/&#34;</span>
+</span></span><span style=display:flex><span>        command <span style=color:#81a1c1>=</span> <span style=color:#bf616a>&lt;&lt;</span><span style=color:#81a1c1;font-weight:700>EOL</span>
+</span></span><span style=display:flex><span>        ANSIBLE_HOST_KEY_CHEKING<span style=color:#81a1c1>=</span><span style=color:#81a1c1;font-weight:700>False</span> <span style=color:#81a1c1;font-weight:700>ansible</span><span style=color:#bf616a>-</span><span style=color:#81a1c1;font-weight:700>playbook</span> <span style=color:#bf616a>-</span><span style=color:#81a1c1;font-weight:700>i</span> <span style=color:#81a1c1;font-weight:700>hosts</span><span style=color:#bf616a>/</span><span style=color:#81a1c1;font-weight:700>inventory</span><span style=color:#eceff4>.</span><span style=color:#81a1c1;font-weight:700>gcp</span><span style=color:#eceff4>.</span><span style=color:#81a1c1;font-weight:700>yaml</span> <span style=color:#81a1c1;font-weight:700>debian</span><span style=color:#eceff4>.</span><span style=color:#81a1c1;font-weight:700>yaml</span>
+</span></span><span style=display:flex><span>        <span style=color:#81a1c1;font-weight:700>EOL</span>
+</span></span><span style=display:flex><span>    }
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>ポイントはシークレットの値にアクセスする際に <code>data.google_secret_manager_secret_version.&lt;resource_name>.secret_data</code> とすること。最後の値へのアクセスが <code>secret_data</code> になっているのが注意。</p><h2 id=cloud-buildで呼んだterraform内でansibleを呼べるようにする>Cloud Buildで呼んだTerraform内でAnsibleを呼べるようにする</h2><p>Cloud Buildの設定ではTerraformのbuilderに <code>hashicorp/terraform:&lt;version></code> を使っているが、これを使うと <code>local-exec</code> でAnsibleが呼び出せない。（イメージ内にAnsibleが入ってないので当たり前）</p><p>仕方ないので自分でCloud Builderを作成する。最後は <code>ENTRYPOINT</code> にしないと起動できないので注意。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-dockerfile data-lang=dockerfile><span style=display:flex><span><span style=color:#81a1c1;font-weight:700>FROM</span><span style=color:#a3be8c> python:3.9-slim-buster as fetcher</span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>ENV</span> TERRAFORM_VER<span style=color:#81a1c1>=</span><span style=color:#a3be8c>&#34;1.0.2&#34;</span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>ENV</span> ANSIBLE_VER<span style=color:#81a1c1>=</span><span style=color:#a3be8c>&#34;2.11.0&#34;</span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>RUN</span> apt-get update <span style=color:#81a1c1>&amp;&amp;</span> apt-get install -y wget unzip<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>WORKDIR</span><span style=color:#a3be8c> /download</span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>RUN</span> wget -q -O terraform.zip <span style=color:#a3be8c>&#34;https://releases.hashicorp.com/terraform/1.0.2/terraform_</span><span style=color:#a3be8c>${</span>TERRAFORM_VER<span style=color:#a3be8c>}</span><span style=color:#a3be8c>_linux_amd64.zip&#34;</span> <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>    <span style=color:#81a1c1>&amp;&amp;</span> unzip terraform.zip <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>    <span style=color:#81a1c1>&amp;&amp;</span> rm terraform.zip<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>RUN</span> wget https://bootstrap.pypa.io/get-pip.py -O get-pip.py <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>    <span style=color:#81a1c1>&amp;&amp;</span> python3 get-pip.py <span style=color:#81a1c1>&amp;&amp;</span> rm get-pip.py<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>COPY</span> requirements.txt requirements.txt<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>RUN</span> pip install -r requirements.txt<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>RUN</span> ansible-galaxy collection install google.cloud community.general<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>RUN</span> ansible-galaxy install kewlfft.aur fubarhouse.golang<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>FROM</span><span style=color:#a3be8c> python:3.9-slim-buster</span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>COPY</span> --from<span style=color:#81a1c1>=</span>fetcher /download/terraform /usr/local/bin/terraform<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>RUN</span> chmod +x /usr/local/bin/terraform<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>COPY</span> --from<span style=color:#81a1c1>=</span>fetcher /usr/local/lib/python3.9/site-packages /usr/local/lib/python3.9/site-packages<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>COPY</span> --from<span style=color:#81a1c1>=</span>fetcher /usr/local/bin/ansible /usr/local/bin/ansible<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>COPY</span> terraform.bash /usr/local/bin/terraform.bash<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>RUN</span> chmod +x /usr/local/bin/terraform.bash<span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span><span style=color:#81a1c1;font-weight:700>ENTRYPOINT</span> <span style=color:#eceff4>[</span><span style=color:#a3be8c>&#34;/usr/local/bin/terraform.bash&#34;</span><span style=color:#eceff4>]</span><span style=color:#bf616a>
+</span></span></span></code></pre></div><p>また、<code>ENTRYPOINT</code> 用のコマンドがCloud Buildから引数を受け取れるように、このようにラッパーのシェルスクリプトを用意しておいて、そちらを指定するのが一般的。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#81a1c1>echo</span> <span style=color:#a3be8c>&#34;Running: terraform </span>$@<span style=color:#a3be8c>&#34;</span>
+</span></span><span style=display:flex><span>/usr/local/bin/terraform <span style=color:#a3be8c>&#34;</span>$@<span style=color:#a3be8c>&#34;</span>
+</span></span></code></pre></div><h2 id=ansibleのhosts内で使うサービスアカウント情報を渡す部分>Ansibleのhosts内で使うサービスアカウント情報を渡す部分</h2><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span><span style=color:#8fbcbb>---</span>
+</span></span><span style=display:flex><span><span style=color:#616e87;font-style:italic># This inventory is using gcp_compute plugin. Install the plugin in advance of the execution.</span>
+</span></span><span style=display:flex><span><span style=color:#616e87;font-style:italic># $ ansible-galaxy collection install google.cloud</span>
+</span></span><span style=display:flex><span><span style=color:#616e87;font-style:italic># https://docs.ansible.com/ansible/latest/collections/google/cloud/gcp_compute_inventory.html</span>
+</span></span><span style=display:flex><span><span style=color:#81a1c1>plugin</span><span style=color:#eceff4>:</span> gcp_compute
+</span></span><span style=display:flex><span><span style=color:#81a1c1>zones</span><span style=color:#eceff4>:</span> <span style=color:#616e87;font-style:italic># populate inventory with instances in these regions</span>
+</span></span><span style=display:flex><span>  - asia-northeast1-b
+</span></span><span style=display:flex><span>  - asia-northeast1-a
+</span></span><span style=display:flex><span>  - asia-northeast2-b
+</span></span><span style=display:flex><span>  - asia-northeast2-a
+</span></span><span style=display:flex><span>  - asia-east1-b
+</span></span><span style=display:flex><span><span style=color:#81a1c1>projects</span><span style=color:#eceff4>:</span> development-215403
+</span></span><span style=display:flex><span><span style=color:#81a1c1>service_account_file</span><span style=color:#eceff4>:</span> /workspace/ansible-service-account.json
+</span></span><span style=display:flex><span><span style=color:#81a1c1>auth_kind</span><span style=color:#eceff4>:</span> serviceaccount
+</span></span><span style=display:flex><span><span style=color:#81a1c1>scopes</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span> - <span style=color:#a3be8c>&#39;https://www.googleapis.com/auth/compute&#39;</span>
+</span></span><span style=display:flex><span><span style=color:#81a1c1>hostnames</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>  <span style=color:#616e87;font-style:italic># List host by name instead of the default public ip</span>
+</span></span><span style=display:flex><span>  - <span style=color:#a3be8c>&#39;name&#39;</span>
+</span></span><span style=display:flex><span><span style=color:#81a1c1>compose</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>  <span style=color:#616e87;font-style:italic># Set an inventory parameter to use the Public IP address to connect to the host</span>
+</span></span><span style=display:flex><span>  <span style=color:#616e87;font-style:italic># For Private ip use &#34;networkInterfaces[0].networkIP&#34;</span>
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>ansible_host</span><span style=color:#eceff4>:</span> networkInterfaces[0].accessConfigs[0].natIP
+</span></span></code></pre></div><p><code>service_account_file</code> の情報を渡さないと <code>ansible-playbook</code> が実行が失敗するわけだけど、これは <code>google_compute_instance</code> の <code>local-exec</code> からだと変数として値を渡せるものではない。</p><p>仕方がないのでCloud Buildの特徴を使って <code>/workspace</code> 以下にサービスアカウントファイルを持ってくる手順を <code>cloudbuild.yaml</code> に記述する。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span>- <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> <span style=color:#a3be8c>&#39;gcr.io/cloud-builders/gcloud-slim&#39;</span>
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>entrypoint</span><span style=color:#eceff4>:</span> <span style=color:#a3be8c>&#39;bash&#39;</span>
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>args</span><span style=color:#eceff4>:</span> <span style=color:#eceff4>[</span><span style=color:#a3be8c>&#39;shellscript/fetch_service_account_file.bash&#39;</span><span style=color:#eceff4>]</span>
+</span></span></code></pre></div><p>この中で呼んでるシェルスクリプトはこんな感じ。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-bash data-lang=bash><span style=display:flex><span><span style=color:#5e81ac;font-style:italic>#!/bin/bash
+</span></span></span><span style=display:flex><span><span style=color:#5e81ac;font-style:italic></span><span style=color:#81a1c1>set</span> -ex
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>IAM_ACCOUNT<span style=color:#81a1c1>=</span><span style=color:#a3be8c>&#34;cloud-build-terraform-ansible@development-215403.iam.gserviceaccount.com&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>keys<span style=color:#81a1c1>=</span><span style=color:#81a1c1;font-weight:700>$(</span> gcloud iam service-accounts keys list <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>  --iam-account<span style=color:#81a1c1>=</span><span style=color:#a3be8c>${</span>IAM_ACCOUNT<span style=color:#a3be8c>}</span> <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>  --filter<span style=color:#81a1c1>=</span><span style=color:#a3be8c>&#34;key_type=USER_MANAGED&#34;</span> <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>  --format<span style=color:#81a1c1>=</span><span style=color:#a3be8c>&#34;value(name)&#34;</span> <span style=color:#81a1c1;font-weight:700>)</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#81a1c1;font-weight:700>if</span> <span style=color:#81a1c1>[</span> -n <span style=color:#a3be8c>&#34;</span>$keys<span style=color:#a3be8c>&#34;</span> <span style=color:#81a1c1>]</span><span style=color:#eceff4>;</span> <span style=color:#81a1c1;font-weight:700>then</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>for</span> key in $keys<span style=color:#eceff4>;</span> <span style=color:#81a1c1;font-weight:700>do</span>
+</span></span><span style=display:flex><span>        gcloud iam service-accounts keys delete $key <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>          --iam-account<span style=color:#81a1c1>=</span><span style=color:#a3be8c>${</span>IAM_ACCOUNT<span style=color:#a3be8c>}</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>done</span>
+</span></span><span style=display:flex><span><span style=color:#81a1c1;font-weight:700>fi</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>gcloud iam service-accounts keys create ansible-service-account.json <span style=color:#ebcb8b>\
+</span></span></span><span style=display:flex><span><span style=color:#ebcb8b></span>  --iam-account<span style=color:#81a1c1>=</span><span style=color:#a3be8c>${</span>IAM_ACCOUNT<span style=color:#a3be8c>}</span>
+</span></span></code></pre></div><h2 id=ansibleが-authentication-failed-となってapt関連を動かせない>Ansibleが &ldquo;Authentication failed&rdquo; となってapt関連を動かせない</h2><p>これでめちゃくちゃはまった。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-console data-lang=console><span style=display:flex><span>Error running command &#39;ANSIBLE_HOST_KEY_CHEKING=False ansible-playbook -i hosts/inventory.gcp.yaml debian.yaml&#39;: exit status 4. Output:
+</span></span><span style=display:flex><span>PLAY [debian]
+</span></span><span style=display:flex><span>******************************************************************
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span>TASK [Gathering Facts]
+</span></span><span style=display:flex><span>*********************************************************
+</span></span><span style=display:flex><span>[WARNING]: Platform linux on host debian is using the discovered Python interpreter at /usr/bin/python3.7, but future installation of another Python interpreter could change the meaning of that path. See https://docs.ansible.com/ansible/2.11/reference_appendices/interpreter_discovery.html for more information.
+</span></span><span style=display:flex><span>ok: [debian]
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span>TASK [debian : Change default shell]
+</span></span><span style=display:flex><span>*******************************************
+</span></span><span style=display:flex><span>changed: [debian]
+</span></span><span style=display:flex><span><span style=color:#bf616a>
+</span></span></span><span style=display:flex><span><span style=color:#bf616a></span>TASK [debian : Install preconditional apt packages]
+</span></span><span style=display:flex><span>****************************
+</span></span><span style=display:flex><span>failed: [debian] (item={&#39;name&#39;: &#39;apt-transport-https&#39;, &#39;state&#39;: &#39;latest&#39;}) =&gt; {&#34;ansible_loop_var&#34;: &#34;item&#34;, &#34;item&#34;: {&#34;name&#34;: &#34;apt-transport-https&#34;, &#34;state&#34;: &#34;latest&#34;}, &#34;msg&#34;: &#34;Failed to uthenticate: Authentication failed.&#34;, &#34;unreachable&#34;: true}
+</span></span></code></pre></div><p>実際はAnsibleは全然関係なくて、taskの順番で実際に変更後に使うshellをインストールする前にそのshellに変更してしまったから、shellに接続できなくて死んでたという話。エラーメッセージだけみてSSH周りがおかしいのだと思って混乱してた。再現する簡単な設定。</p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-yaml data-lang=yaml><span style=display:flex><span>- <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> Change default shell
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>ansible.builtin.user</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> demo
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1>shell</span><span style=color:#eceff4>:</span> /usr/bin/zsh
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>become</span><span style=color:#eceff4>:</span> <span style=color:#81a1c1;font-weight:700>yes</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>- <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> Update package
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>ansible.builtin.apt</span><span style=color:#eceff4>:</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1>name</span><span style=color:#eceff4>:</span> zsh
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1>state</span><span style=color:#eceff4>:</span> latest
+</span></span><span style=display:flex><span>  <span style=color:#81a1c1>become</span><span style=color:#eceff4>:</span> <span style=color:#81a1c1;font-weight:700>yes</span>
+</span></span></code></pre></div></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/terraform>terraform</a></li><li><a href=/tags/ansible>ansible</a></li><li><a href=/tags/secret-manager>secret-manager</a></li><li><a href=/tags/compute-engine>compute-engine</a></li><li><a href=/tags/cloud-build>cloud-build</a></li></ul></nav></div></article></main><footer><div style=display:flex><a class=soc href=https://github.com/ymotongpoo rel=me title=GitHub><i data-feather=github></i></a>
+<a class=border></a><a class=soc href=https://twitter.com/ymotongpoo rel=me title=Twitter><i data-feather=twitter></i></a>
+<a class=border></a></div><div class=footer-info>2023 &amp;copy;Yoshi Yamaguchi | <a href=https://github.com/athul/archie>Archie Theme</a> | Built with <a href=https://gohugo.io>Hugo</a></div></footer><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-6420772-10","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script>
+<script>feather.replace()</script></div></body></html>
