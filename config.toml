@@ -1,9 +1,8 @@
-baseURL = "http://gist.ymotongpoo.dev"
+baseURL = "https://gist.ymotongpoo.dev"
 languageCode = "ja"
 title = "gist::ymotongpoo"
 theme = "archie"
 hasCJKLanguage = true
-summaryLength = 0
 copyright = "&copy;Yoshi Yamaguchi"
 googleAnalytics = "UA-6420772-10"
 
@@ -11,12 +10,16 @@ pygmentsstyle = "nord"
 pygmentscodefences = true
 pygmentscodefencesguesssyntax = true
 
+paginate = 20
+summaryLength = 10
+
 [params]
 mode = "auto"
 subtitle = "A brain dumps by Yoshi Yamaguchi."
-useCDN = false
+mainSections = ["posts"]
 mathjax = true
 katex = true
+featherIconsCDN = true
 
 [[params.social]]
 name = "GitHub"
@@ -37,3 +40,6 @@ weight = 1
 name = "About"
 url = "/about"
 weight = 3
+
+[taxonomies]
+tags = "tags"
