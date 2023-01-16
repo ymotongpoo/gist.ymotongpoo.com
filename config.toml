@@ -1,18 +1,44 @@
 baseURL = "http://gist.ymotongpoo.dev"
 languageCode = "ja"
 title = "gist::ymotongpoo"
-theme = "hugo-primer"
+theme = "archie"
 hasCJKLanguage = true
-summaryLength = 70
-pygmentsCodeFences = true
-pygmentsUseClasses = true
-copyright = "&copy;Yoshi Yamaguchi 2021-"
+summaryLength = 0
+copyright = "&copy;Yoshi Yamaguchi"
 googleAnalytics = "UA-6420772-10"
 
+pygmentsstyle = "nord"
+pygmentscodefences = true
+pygmentscodefencesguesssyntax = true
+
 [params]
-description = "A brain dumps by Yoshi Yamaguchi."
-twitter = "ymotongpoo"
-useIcon = true
-useTwitterCard = true
-shareTo = ["Twitter", "Hatena", "Facebook"]
-showFooterCredits = true
+mode = "auto"
+subtitle = "A brain dumps by Yoshi Yamaguchi."
+useCDN = false
+mathjax = true
+katex = true
+
+[[params.social]]
+name = "GitHub"
+icon = "github"
+url = "https://github.com/ymotongpoo"
+
+[[params.social]]
+name = "Twitter"
+icon = "twitter"
+url = "https://twitter.com/ymotongpoo"
+
+[[menu.main]]
+name = "Home"
+url = "/"
+weight = 1
+
+[[menu.main]]
+name = "Posts"
+url = "/posts"
+weight = 2
+
+[[menu.main]]
+name = "About"
+url = "/about"
+weight = 3
