@@ -1,0 +1,5 @@
+{
+    "pasteImage.defaultName": "YYYYMMDDHHmmss",
+    "pasteImage.path": "${projectRoot}/static/image/",
+    "pasteImage.showFilePathConfirmInputBox": true
+}

@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "new post",
+            "label": "newPost",
             "type": "shell",
             "command": "hugo new posts/$(date +%Y%m)/${input:title}.md",
             "problemMatcher": []
