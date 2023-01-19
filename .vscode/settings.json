@@ -1,5 +1,8 @@
 {
     "pasteImage.defaultName": "YYYYMMDDHHmmss",
     "pasteImage.path": "${projectRoot}/static/image/",
-    "pasteImage.showFilePathConfirmInputBox": true
+    "pasteImage.basePath": "${projectRoot}/static/",
+    "pasteImage.prefix": "/",
+    "pasteImage.showFilePathConfirmInputBox": true,
+    "pasteImage.insertPattern": "{{< figure src=\"${imageFilePath}\" alt=\"\" >}}"
 }

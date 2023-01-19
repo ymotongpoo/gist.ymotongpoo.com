@@ -7,7 +7,10 @@
             "label": "newPost",
             "type": "shell",
             "command": "hugo new posts/$(date +%Y%m)/${input:title}.md",
-            "problemMatcher": []
+            "problemMatcher": [],
+            "runOptions": {
+                "runOn": "folderOpen"
+            }
         }
     ],
     "inputs": [
