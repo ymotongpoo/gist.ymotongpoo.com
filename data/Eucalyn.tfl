@@ -10,237 +10,284 @@
     },
     "KeyQ": {
       "default": {
-        "base": "q"
+        "base": "q",
+        "shift": "Q"
       }
     },
     "KeyW": {
       "default": {
-        "base": "w"
+        "base": "w",
+        "shift": "W"
       }
     },
     "KeyA": {
       "default": {
-        "base": "a"
+        "base": "a",
+        "shift": "A"
       }
     },
     "KeyE": {
       "default": {
-        "base": ","
+        "base": ",",
+        "shift": "<"
       }
     },
     "KeyR": {
       "default": {
-        "base": "."
+        "base": ".",
+        "shift": ">"
       }
     },
     "KeyT": {
       "default": {
-        "base": ";"
+        "base": ";",
+        "shift": ":"
       }
     },
     "KeyY": {
       "default": {
-        "base": "m"
+        "base": "m",
+        "shift": "M"
       }
     },
     "KeyU": {
       "default": {
-        "base": "r"
+        "base": "r",
+        "shift": "R"
       }
     },
     "KeyI": {
       "default": {
-        "base": "d"
+        "base": "d",
+        "shift": "D"
       }
     },
     "KeyO": {
       "default": {
-        "base": "y"
+        "base": "y",
+        "shift": "Y"
       }
     },
     "KeyP": {
       "default": {
-        "base": "p"
+        "base": "p",
+        "shift": "P"
       }
     },
     "KeyS": {
       "default": {
-        "base": "o"
+        "base": "o",
+        "shift": "O"
       }
     },
     "KeyD": {
       "default": {
-        "base": "e"
+        "base": "e",
+        "shift": "E"
       }
     },
     "KeyF": {
       "default": {
-        "base": "i"
+        "base": "i",
+        "shift": "I"
       }
     },
     "KeyG": {
       "default": {
-        "base": "u"
+        "base": "u",
+        "shift": "U"
       }
     },
     "KeyH": {
       "default": {
-        "base": "g"
+        "base": "g",
+        "shift": "G"
       }
     },
     "KeyJ": {
       "default": {
-        "base": "t"
+        "base": "t",
+        "shift": "T"
       }
     },
     "KeyK": {
       "default": {
-        "base": "k"
+        "base": "k",
+        "shift": "K"
       }
     },
     "KeyL": {
       "default": {
-        "base": "s"
+        "base": "s",
+        "shift": "S"
       }
     },
     "Semicolon": {
       "default": {
-        "base": "n"
+        "base": "n",
+        "shift": "N"
       }
     },
     "KeyZ": {
       "default": {
-        "base": "z"
+        "base": "z",
+        "shift": "Z"
       }
     },
     "KeyX": {
       "default": {
-        "base": "x"
+        "base": "x",
+        "shift": "X"
       }
     },
     "KeyC": {
       "default": {
-        "base": "c"
+        "base": "c",
+        "shift": "C"
       }
     },
     "KeyV": {
       "default": {
-        "base": "v"
+        "base": "v",
+        "shift": "V"
       }
     },
     "KeyB": {
       "default": {
-        "base": "f"
+        "base": "f",
+        "shift": "F"
       }
     },
     "KeyN": {
       "default": {
-        "base": "b"
+        "base": "b",
+        "shift": "B"
       }
     },
     "KeyM": {
       "default": {
-        "base": "h"
+        "base": "h",
+        "shift": "H"
       }
     },
     "Comma": {
       "default": {
-        "base": "j"
+        "base": "j",
+        "shift": "J"
       }
     },
     "Period": {
       "default": {
-        "base": "l"
+        "base": "l",
+        "shift": "I"
       }
     },
     "Slash": {
       "default": {
-        "base": "/"
+        "base": "/",
+        "shift": "?"
       }
     },
     "Digit1": {
       "default": {
-        "base": "1"
+        "base": "1",
+        "shift": "!"
       }
     },
     "Backquote": {
       "default": {
-        "base": "`"
+        "base": "`",
+        "shift": "~"
       }
     },
     "Digit2": {
       "default": {
-        "base": "2"
+        "base": "2",
+        "shift": "@"
       }
     },
     "Digit3": {
       "default": {
-        "base": "3"
+        "base": "3",
+        "shift": "#"
       }
     },
     "Digit4": {
       "default": {
-        "base": "4"
+        "base": "4",
+        "shift": "$"
       }
     },
     "Digit5": {
       "default": {
-        "base": "5"
+        "base": "5",
+        "shift": "%"
       }
     },
     "Digit6": {
       "default": {
-        "base": "6"
+        "base": "6",
+        "shift": "^"
       }
     },
     "Digit7": {
       "default": {
-        "base": "7"
+        "base": "7",
+        "shift": "&"
       }
     },
     "Digit8": {
       "default": {
-        "base": "8"
+        "base": "8",
+        "shift": "*"
       }
     },
     "Digit9": {
       "default": {
-        "base": "9"
+        "base": "9",
+        "shift": "("
       }
     },
     "Digit0": {
       "default": {
-        "base": "0"
+        "base": "0",
+        "shift": ")"
       }
     },
     "Minus": {
       "default": {
-        "base": "-"
+        "base": "-",
+        "shift": "_"
       }
     },
     "Equal": {
       "default": {
-        "base": "="
+        "base": "=",
+        "shift": "+"
       }
     },
     "BracketLeft": {
       "default": {
-        "base": "["
+        "base": "[",
+        "shift": "{"
       }
     },
     "Quote": {
       "default": {
-        "base": "'"
+        "base": "'",
+        "shift": "\""
       }
     },
     "BracketRight": {
       "default": {
-        "base": "]"
+        "base": "]",
+        "shift": "}"
       }
     },
     "Backslash": {
       "default": {
-        "base": "\\"
+        "base": "\\",
+        "shift": "|"
       }
     }
   },
