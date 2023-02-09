@@ -1,0 +1,248 @@
+{
+  "id": "custom-438e2774-b3cb-46ae-97a7-a3a7311b54d8",
+  "name": "Eucalyn",
+  "version": 1,
+  "keys": {
+    "Space": {
+      "default": {
+        "base": " "
+      }
+    },
+    "KeyQ": {
+      "default": {
+        "base": "q"
+      }
+    },
+    "KeyW": {
+      "default": {
+        "base": "w"
+      }
+    },
+    "KeyA": {
+      "default": {
+        "base": "a"
+      }
+    },
+    "KeyE": {
+      "default": {
+        "base": ","
+      }
+    },
+    "KeyR": {
+      "default": {
+        "base": "."
+      }
+    },
+    "KeyT": {
+      "default": {
+        "base": ";"
+      }
+    },
+    "KeyY": {
+      "default": {
+        "base": "m"
+      }
+    },
+    "KeyU": {
+      "default": {
+        "base": "r"
+      }
+    },
+    "KeyI": {
+      "default": {
+        "base": "d"
+      }
+    },
+    "KeyO": {
+      "default": {
+        "base": "y"
+      }
+    },
+    "KeyP": {
+      "default": {
+        "base": "p"
+      }
+    },
+    "KeyS": {
+      "default": {
+        "base": "o"
+      }
+    },
+    "KeyD": {
+      "default": {
+        "base": "e"
+      }
+    },
+    "KeyF": {
+      "default": {
+        "base": "i"
+      }
+    },
+    "KeyG": {
+      "default": {
+        "base": "u"
+      }
+    },
+    "KeyH": {
+      "default": {
+        "base": "g"
+      }
+    },
+    "KeyJ": {
+      "default": {
+        "base": "t"
+      }
+    },
+    "KeyK": {
+      "default": {
+        "base": "k"
+      }
+    },
+    "KeyL": {
+      "default": {
+        "base": "s"
+      }
+    },
+    "Semicolon": {
+      "default": {
+        "base": "n"
+      }
+    },
+    "KeyZ": {
+      "default": {
+        "base": "z"
+      }
+    },
+    "KeyX": {
+      "default": {
+        "base": "x"
+      }
+    },
+    "KeyC": {
+      "default": {
+        "base": "c"
+      }
+    },
+    "KeyV": {
+      "default": {
+        "base": "v"
+      }
+    },
+    "KeyB": {
+      "default": {
+        "base": "f"
+      }
+    },
+    "KeyN": {
+      "default": {
+        "base": "b"
+      }
+    },
+    "KeyM": {
+      "default": {
+        "base": "h"
+      }
+    },
+    "Comma": {
+      "default": {
+        "base": "j"
+      }
+    },
+    "Period": {
+      "default": {
+        "base": "l"
+      }
+    },
+    "Slash": {
+      "default": {
+        "base": "/"
+      }
+    },
+    "Digit1": {
+      "default": {
+        "base": "1"
+      }
+    },
+    "Backquote": {
+      "default": {
+        "base": "`"
+      }
+    },
+    "Digit2": {
+      "default": {
+        "base": "2"
+      }
+    },
+    "Digit3": {
+      "default": {
+        "base": "3"
+      }
+    },
+    "Digit4": {
+      "default": {
+        "base": "4"
+      }
+    },
+    "Digit5": {
+      "default": {
+        "base": "5"
+      }
+    },
+    "Digit6": {
+      "default": {
+        "base": "6"
+      }
+    },
+    "Digit7": {
+      "default": {
+        "base": "7"
+      }
+    },
+    "Digit8": {
+      "default": {
+        "base": "8"
+      }
+    },
+    "Digit9": {
+      "default": {
+        "base": "9"
+      }
+    },
+    "Digit0": {
+      "default": {
+        "base": "0"
+      }
+    },
+    "Minus": {
+      "default": {
+        "base": "-"
+      }
+    },
+    "Equal": {
+      "default": {
+        "base": "="
+      }
+    },
+    "BracketLeft": {
+      "default": {
+        "base": "["
+      }
+    },
+    "Quote": {
+      "default": {
+        "base": "'"
+      }
+    },
+    "BracketRight": {
+      "default": {
+        "base": "]"
+      }
+    },
+    "Backslash": {
+      "default": {
+        "base": "\\"
+      }
+    }
+  },
+  "description": "https://eucalyn.hatenadiary.jp/entry/about-eucalyn-layout"
+}
