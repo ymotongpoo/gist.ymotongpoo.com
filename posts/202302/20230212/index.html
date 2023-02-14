@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=x-ua-compatible content="IE=edge"><title>2023年02月12日 - gist::ymotongpoo</title><meta name=viewport content="width=device-width,initial-scale=1"><meta name=description content="Effective Go 6章を4ページ進"><meta property="og:image" content><meta property="og:title" content="2023年02月12日"><meta property="og:description" content="Effective Go 6章を4ページ進"><meta property="og:type" content="article"><meta property="og:url" content="https://gist.ymotongpoo.dev/posts/202302/20230212/"><meta property="article:section" content="posts"><meta property="article:published_time" content="2023-02-12T10:41:21+09:00"><meta property="article:modified_time" content="2023-02-12T10:41:21+09:00"><meta name=twitter:card content="summary"><meta name=twitter:title content="2023年02月12日"><meta name=twitter:description content="Effective Go 6章を4ページ進"><script src=https://gist.ymotongpoo.devjs/feather.min.js></script>
+<link href=https://gist.ymotongpoo.dev/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css rel=stylesheet><link rel=stylesheet type=text/css media=screen href=https://gist.ymotongpoo.dev/css/main.ac08a4c9714baa859217f92f051deb58df2938ec352b506df655005dcaf98cc0.css><link id=darkModeStyle rel=stylesheet type=text/css href=https://gist.ymotongpoo.dev/css/dark.726cd11ca6eb7c4f7d48eb420354f814e5c1b94281aaf8fd0511c1319f7f78a4.css media="(prefers-color-scheme: dark)"><script type=text/javascript src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script><script type=text/x-mathjax-config>
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script><link rel=stylesheet href=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css><script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js></script>
+<script defer src=https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js onload=renderMathInElement(document.body)></script>
+<script>document.addEventListener("DOMContentLoaded",function(){renderMathInElement(document.body,{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})})</script></head><body><div class=content><header><div class=main><a href=https://gist.ymotongpoo.dev>gist::ymotongpoo</a></div><nav><a href=/>Home</a>
+<a href=/>Info</a>
+<a href=/posts/>Posts</a>
+<a href=/about>About</a></nav></header><main><article><div class=title><h1 class=title>2023年02月12日</h1><div class=meta>Posted on Feb 12, 2023</div></div><section class=body><h2 id=effective-go>Effective Go</h2><p>6章を4ページ進めた。また原稿の移行は3章まで終わった。</p><p>原稿を進める中で、元原稿が無駄に改行が入ってて扱いづらかったので、マクロを書いて対応することにした。</p><p>このVS Code拡張を入れて、JavaScriptのマクロを書くと、改行と間にある余計な空白を一気に削除できるようになった。
+ショートカットを何回も押さなくて良いので便利。</p><p><a href="https://marketplace.visualstudio.com/items?itemName=EXCEEDSYSTEM.vscode-macros">https://marketplace.visualstudio.com/items?itemName=EXCEEDSYSTEM.vscode-macros</a></p><div class=highlight><pre tabindex=0 style=color:#d8dee9;background-color:#2e3440;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-javascript data-lang=javascript><span style=display:flex><span><span style=color:#81a1c1;font-weight:700>const</span> vscode <span style=color:#81a1c1>=</span> require<span style=color:#eceff4>(</span><span style=color:#a3be8c>&#39;vscode&#39;</span><span style=color:#eceff4>);</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>module<span style=color:#eceff4>.</span>exports<span style=color:#eceff4>.</span>macroCommands <span style=color:#81a1c1>=</span> <span style=color:#eceff4>{</span>
+</span></span><span style=display:flex><span>    RemoveNewLine<span style=color:#81a1c1>:</span> <span style=color:#eceff4>{</span>
+</span></span><span style=display:flex><span>       no<span style=color:#81a1c1>:</span> <span style=color:#b48ead>1</span><span style=color:#eceff4>,</span>
+</span></span><span style=display:flex><span>       func<span style=color:#81a1c1>:</span> RemoveNewLineInSelection
+</span></span><span style=display:flex><span>    <span style=color:#eceff4>},</span>
+</span></span><span style=display:flex><span><span style=color:#eceff4>}</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#81a1c1;font-weight:700>function</span> RemoveNewLineInSelection<span style=color:#eceff4>()</span> <span style=color:#eceff4>{</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>const</span> editor <span style=color:#81a1c1>=</span> vscode<span style=color:#eceff4>.</span><span style=color:#81a1c1>window</span><span style=color:#eceff4>.</span>activeTextEditor<span style=color:#eceff4>;</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>if</span> <span style=color:#eceff4>(</span><span style=color:#81a1c1>!</span>editor<span style=color:#eceff4>)</span> <span style=color:#eceff4>{</span>
+</span></span><span style=display:flex><span>        <span style=color:#81a1c1;font-weight:700>return</span> <span style=color:#a3be8c>&#34;Editor is not available.&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#eceff4>}</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>const</span> <span style=color:#81a1c1>document</span> <span style=color:#81a1c1>=</span> editor<span style=color:#eceff4>.</span><span style=color:#81a1c1>document</span><span style=color:#eceff4>;</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>const</span> selection <span style=color:#81a1c1>=</span> editor<span style=color:#eceff4>.</span>selection<span style=color:#eceff4>;</span>
+</span></span><span style=display:flex><span>    <span style=color:#81a1c1;font-weight:700>const</span> selectedText <span style=color:#81a1c1>=</span> <span style=color:#81a1c1>document</span><span style=color:#eceff4>.</span>getText<span style=color:#eceff4>(</span>selection<span style=color:#eceff4>);</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#616e87;font-style:italic>// remove newline and extra white spaces
+</span></span></span><span style=display:flex><span><span style=color:#616e87;font-style:italic></span>    <span style=color:#81a1c1;font-weight:700>let</span> replaced <span style=color:#81a1c1>=</span> selectedText<span style=color:#eceff4>.</span>replace<span style=color:#eceff4>(</span><span style=color:#ebcb8b>/\r?\n/g</span><span style=color:#eceff4>,</span> <span style=color:#a3be8c>&#39; &#39;</span><span style=color:#eceff4>);</span>
+</span></span><span style=display:flex><span>    replaced <span style=color:#81a1c1>=</span> replaced<span style=color:#eceff4>.</span>replace<span style=color:#eceff4>(</span><span style=color:#ebcb8b>/ +/g</span><span style=color:#eceff4>,</span> <span style=color:#a3be8c>&#39; &#39;</span><span style=color:#eceff4>);</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    editor<span style=color:#eceff4>.</span>edit<span style=color:#eceff4>(</span>editBuilder <span style=color:#eceff4>=&gt;</span> <span style=color:#eceff4>{</span>
+</span></span><span style=display:flex><span>        editBuilder<span style=color:#eceff4>.</span>replace<span style=color:#eceff4>(</span>selection<span style=color:#eceff4>,</span> replaced<span style=color:#eceff4>);</span>
+</span></span><span style=display:flex><span>    <span style=color:#eceff4>});</span>
+</span></span><span style=display:flex><span><span style=color:#eceff4>}</span>
+</span></span></code></pre></div></section><div class=post-tags><nav class="nav tags"><ul class=tags><li><a href=/tags/misc>misc</a></li><li><a href=/tags/vscode>VSCode</a></li><li><a href=/tags/translation>translation</a></li></ul></nav></div></article></main><footer><div style=display:flex><a class=soc href=https://github.com/ymotongpoo rel=me title=GitHub><i data-feather=github></i></a>
+<a class=border></a><a class=soc href=https://twitter.com/ymotongpoo rel=me title=Twitter><i data-feather=twitter></i></a>
+<a class=border></a></div><div class=footer-info>2023 &amp;copy;Yoshi Yamaguchi | <a href=https://github.com/athul/archie>Archie Theme</a> | Built with <a href=https://gohugo.io>Hugo</a></div></footer><script type=application/javascript>var doNotTrack=!1;doNotTrack||(window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)},ga.l=+new Date,ga("create","UA-6420772-10","auto"),ga("send","pageview"))</script><script async src=https://www.google-analytics.com/analytics.js></script>
+<script>feather.replace()</script></div></body></html>
