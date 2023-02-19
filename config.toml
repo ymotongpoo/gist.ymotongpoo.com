@@ -20,6 +20,7 @@ mainSections = ["posts"]
 mathjax = true
 katex = true
 featherIconsCDN = true
+amazonJpAffiliate = "ymotongpoo-22"
 
 [[params.social]]
 name = "GitHub"
